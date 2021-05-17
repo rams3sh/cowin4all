@@ -41,8 +41,14 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
                  timeout: int = request_timeout_seconds,
                  connection_error_retries: int = connection_error_retry_attempts,
                  client=None,
-                 explicit_token_refresh_avoid_status_codes=None,
+                 explicit_token_refresh_status_codes=None,
                  **kwargs):
+
+    if explicit_token_refresh_status_codes:
+        if not isinstance(explicit_token_refresh_status_codes, list):
+            explicit_token_refresh_status_codes = [explicit_token_refresh_status_codes]
+    else:
+        explicit_token_refresh_status_codes = []
 
     attempted_connection_error_retries = 0
 
@@ -91,29 +97,24 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
 
         logger.error("Error while performing '{}'. Status Code received :{}, Exception: {}"
                      "".format(action, response.status_code, response.content.decode("utf-8")))
-        if response.status_code in [401, 400] and (client and client.auto_refresh_token):
-            # 400 status code in case of invalid OTP demands refreshing token.
-            # Hence this status code is mentioned here.
+        if ((response.status_code in [401]) or (response.status_code in
+                                                explicit_token_refresh_status_codes)) \
+                and (client and client.auto_refresh_token):
             if client.auto_refresh_retries_count is not None:
+                # client.auto_refresh_retries_count as None signifies no limits for token refresh retry exists
                 if client.auto_refresh_retries_count > client.auto_refresh_token_retries_attempted:
                     client.auto_refresh_token_retries_attempted += 1
                 else:
                     raise Exception("Maximum auto refresh token attempts for the client :{} reached."
                                     "".format(client.auto_refresh_token_retries_attempted))
+
             if client.auto_refresh_token_method:
                 refresh_token_method = client.auto_refresh_token_method
             else:
                 refresh_token_method = refresh_token
-            if explicit_token_refresh_avoid_status_codes:
-                if response.status_code not in explicit_token_refresh_avoid_status_codes:
-                    refresh_token_method(client=client)
-                else:
-                    # In case of retry avoidance , token refresh retry counter should not be incremented
-                    # which we do in the beginning. The below statement resets that.
-                    client.auto_refresh_token_retries_attempted = 0
-                    raise Exception(response.content.decode("utf-8"))
-            else:
-                refresh_token_method(client=client)
+
+            refresh_token_method(client=client)
+
         elif response.status_code in [403]:
             if attempted_connection_error_retries < connection_error_retries:
                 logger.error("Request blocked !! Retrying request ..")

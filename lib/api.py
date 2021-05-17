@@ -38,32 +38,34 @@ class APIClient:
         payload = {"otp": sha256(str(otp).encode('utf-8')).hexdigest(),
                    "txnId": self.taxation_id}
         self.token = None
-        self.token = send_request(action="VALIDATE_OTP", payload=payload, client=self).json()["token"]
+
+        # Status 400 code is raised in case of Invalid OTP. This requires refreshing of token.
+        # Hence it has been added as an explicit status code for initiating token refresh.
+        self.token = send_request(action="VALIDATE_OTP", payload=payload, client=self,
+                                  explicit_token_refresh_status_codes=[400]).json()["token"]
 
     def get_beneficiaries(self):
-        beneficiaries = send_request(action="GET_BENEFICIARIES", client=self,
-                                     explicit_token_refresh_avoid_status_codes=[400]).json()["beneficiaries"]
+        beneficiaries = send_request(action="GET_BENEFICIARIES", client=self).json()["beneficiaries"]
         return beneficiaries
 
     def check_slot_pin_wise(self, pin_code=None, date=None):
         centres = send_request(action="CHECK_SLOTS_BY_PINCODE", pincode=pin_code, date=date,
-                               client=self, explicit_token_refresh_avoid_status_codes=[400]).json()["centers"]
+                               client=self).json()["centers"]
         return centres
 
     def list_states(self):
         states = send_request(action="LIST_STATES",
-                              client=self, explicit_token_refresh_avoid_status_codes=[400]).json()["states"]
+                              client=self).json()["states"]
         return states
 
     def list_districts(self, state_id=None):
         districts = send_request(action="LIST_DISTRICTS", STATE_ID=state_id,
-                                 client=self, explicit_token_refresh_avoid_status_codes=[400]).json()["districts"]
+                                 client=self).json()["districts"]
         return districts
 
     def check_slot_district_wise(self, district_id=None, date=None):
         centres = send_request(action="CHECK_SLOTS_BY_DISTRICT", district_id=district_id,
-                               date=date, client=self, explicit_token_refresh_avoid_status_codes=[400]
-                               ).json()["centers"]
+                               date=date, client=self).json()["centers"]
         return centres
 
     def get_captcha(self):
@@ -83,15 +85,13 @@ class APIClient:
                 }
 
         appointment_id = send_request(action="SCHEDULE_BOOKING", payload=payload,
-                                      client=self,
-                                      explicit_token_refresh_avoid_status_codes=[400]
-                                      ).json().get("appointment_confirmation_no")
+                                      client=self).json().get("appointment_confirmation_no")
         return appointment_id
 
     def download_confirmation(self, appointment_id=None, destination_file_path=None):
         response = send_request(action="GET_CONFIRMATION_FORM", appointment_id=appointment_id,
                                 additional_headers={"Accept": "application/pdf"},
-                                client=self, explicit_token_refresh_avoid_status_codes=[400])
+                                client=self)
         with open(destination_file_path, "wb") as f:
             f.write(response.content)
 

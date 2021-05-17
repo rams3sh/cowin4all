@@ -11,9 +11,9 @@ import tempfile
 import datetime
 import time
 
-from lib.constants import endpoint_map, request_retry_backoff_factor_seconds, request_timeout_seconds, \
-    connection_error_retry_attempts, blocked_request_retry_backoff_factor_seconds, \
-    refresh_token_retry_delay_seconds, user_agent, \
+from lib.constants import endpoint_map, default_request_retry_backoff_factor_seconds, default_request_timeout_seconds, \
+    default_connection_error_retry_attempts, default_blocked_request_retry_backoff_factor_seconds, \
+    delay_refresh_token_retry_delay_seconds, default_user_agent, \
     vaccine_types, doses, payment_types, minimum_age_limits
 
 logger = logging.getLogger(__name__)
@@ -35,11 +35,11 @@ def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(
     return session
 
 
-def send_request(action=None, payload=None, backoff_factor=request_retry_backoff_factor_seconds,
+def send_request(action=None, payload=None, backoff_factor=default_request_retry_backoff_factor_seconds,
                  additional_headers=None,
-                 blocked_request_backoff_factor=blocked_request_retry_backoff_factor_seconds,
-                 timeout: int = request_timeout_seconds,
-                 connection_error_retries: int = connection_error_retry_attempts,
+                 blocked_request_backoff_factor=default_blocked_request_retry_backoff_factor_seconds,
+                 timeout: int = default_request_timeout_seconds,
+                 connection_error_retries: int = default_connection_error_retry_attempts,
                  client=None,
                  explicit_token_refresh_status_codes=None,
                  **kwargs):
@@ -62,7 +62,7 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
             kwargs.pop(kw)
 
     headers = dict()
-    base_headers = {'User-Agent': user_agent,
+    base_headers = {'User-Agent': default_user_agent,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'}
     headers.update(base_headers)
@@ -113,16 +113,19 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
                     refresh_token(client=client)
                     break
                 except Exception as e:
-                    time.sleep(refresh_token_retry_delay_seconds)
+                    time.sleep(delay_refresh_token_retry_delay_seconds)
 
         elif response.status_code in [403]:
-            if attempted_connection_error_retries < connection_error_retries:
-                logger.error("Request blocked !! Retrying request ..")
-                attempted_connection_error_retries += 1
-                time.sleep(blocked_request_backoff_factor * (2 ** (attempted_connection_error_retries - 1)))
-                continue
+            if client.retry_blocked_request:
+                if attempted_connection_error_retries < connection_error_retries:
+                    logger.error("Request blocked !! Retrying request ..")
+                    attempted_connection_error_retries += 1
+                    time.sleep(blocked_request_backoff_factor * (2 ** (attempted_connection_error_retries - 1)))
+                    continue
+                else:
+                    raise Exception("Exhausted request retries !!")
             else:
-                raise Exception("Exhausted request retries !!")
+                raise Exception(response.content.decode("utf-8"))
         else:
             raise Exception(response.content.decode("utf-8"))
 

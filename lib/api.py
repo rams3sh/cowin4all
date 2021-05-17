@@ -2,15 +2,18 @@ from hashlib import sha256
 import re
 
 from lib.utils import send_request
-from lib.constants import otp_generation_secret, refresh_token_retries_attempts
+from lib.constants import default_otp_generation_secret, default_refresh_token_retries_attempts, \
+    default_auto_refresh_token, default_retry_blocked_request
 
 
 class APIClient:
 
     def __init__(self, mobile_no=None,
                  otp_retrieval_method=None,
-                 auto_refresh_token=True,
-                 auto_refresh_retries_count=refresh_token_retries_attempts):
+                 auto_refresh_token=default_auto_refresh_token,
+                 auto_refresh_retries_count=default_refresh_token_retries_attempts,
+                 retry_blocked_request=default_retry_blocked_request):
+
         self.otp_retrieval_method = otp_retrieval_method  # Custom method for retrieval of OTP
         self.auto_refresh_token = auto_refresh_token    # Flag to enable / disable auto refreshing of token
         # Number of auto token retries to be attempted, if enabled.
@@ -18,6 +21,8 @@ class APIClient:
         self.auto_refresh_retries_count = auto_refresh_retries_count
         # Number of auto refresh token retries attempted so far
         self.auto_refresh_token_retries_attempted = 0
+        # Whether to retry request in case of request blocked
+        self.retry_blocked_request = retry_blocked_request
         self.mobile = mobile_no  # Mobile number of the user registered in Cowin portal
 
         # Both of the below variables keeps getting refreshed as part of auto refresh token process
@@ -26,7 +31,7 @@ class APIClient:
 
     def get_otp(self):
         payload = {"mobile": self.mobile,
-                   "secret": otp_generation_secret
+                   "secret": default_otp_generation_secret
                    }
         self.taxation_id = None
         self.token = None

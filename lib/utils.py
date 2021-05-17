@@ -101,11 +101,6 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
                                                 explicit_token_refresh_status_codes)) \
                 and (client and client.auto_refresh_token):
 
-            if client.auto_refresh_token_method:
-                refresh_token_method = client.auto_refresh_token_method
-            else:
-                refresh_token_method = refresh_token
-
             while True:
                 if client.auto_refresh_retries_count is not None:
                     # client.auto_refresh_retries_count as None signifies no limits for token refresh retry exists
@@ -115,9 +110,7 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
                         raise Exception("Maximum auto refresh token attempts for the client :{} reached."
                                         "".format(client.auto_refresh_token_retries_attempted))
                 try:
-                    client.token = None
-                    client.taxation_id = None
-                    refresh_token_method(client=client)
+                    refresh_token(client=client)
                     break
                 except Exception as e:
                     time.sleep(refresh_token_retry_delay_seconds)
@@ -270,6 +263,8 @@ def get_otp_manually(client=None):
 
 
 def refresh_token(client=None):
+    client.token = None
+    client.taxation_id = None
     otp_retrieval_method = getattr(client, "otp_retrieval_method")
     if not otp_retrieval_method:
         otp_retrieval_method = get_otp_manually

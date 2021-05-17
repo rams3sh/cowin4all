@@ -10,11 +10,9 @@ class APIClient:
     def __init__(self,  mobile_no=None,
                  otp_retrieval_method=None,
                  auto_refresh_token=True,
-                 auto_refresh_method=None,
                  auto_refresh_retries_count=3):
         self.otp_retrieval_method = otp_retrieval_method  # Custom method for retrieval of OTP
         self.auto_refresh_token = auto_refresh_token    # Flag to enable / disable auto refreshing of token
-        self.auto_refresh_token_method = auto_refresh_method  # Custom method for auto refreshing token
         # Number of auto token retries to be attempted, if enabled.
         # None corresponds to unlimited retries. Definite value to be provided in int.
         self.auto_refresh_retries_count = auto_refresh_retries_count

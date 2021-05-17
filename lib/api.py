@@ -82,9 +82,6 @@ class APIClient:
                     'captcha': captcha
                 }
 
-        # Status 400 is returned if the scheduling was not successful / schedule was booked.
-        # In this case retrying does not make sense
-        # In case of failed booking attempt, returns None as apoointment_id
         appointment_id = send_request(action="SCHEDULE_BOOKING", payload=payload,
                                       client=self,
                                       explicit_token_refresh_avoid_status_codes=[400]

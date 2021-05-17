@@ -12,7 +12,7 @@ import datetime
 import time
 
 from lib.constants import endpoint_map, request_retry_backoff_factor_seconds, request_timeout_seconds, \
-    connection_error_retry_attempts, blocked_request_retry_backoff_factor_seconds, refresh_token_retry_attempts, \
+    connection_error_retry_attempts, blocked_request_retry_backoff_factor_seconds, \
     refresh_token_retry_delay_seconds, user_agent, \
     vaccine_types, doses, payment_types, minimum_age_limits
 
@@ -100,20 +100,28 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
         if ((response.status_code in [401]) or (response.status_code in
                                                 explicit_token_refresh_status_codes)) \
                 and (client and client.auto_refresh_token):
-            if client.auto_refresh_retries_count is not None:
-                # client.auto_refresh_retries_count as None signifies no limits for token refresh retry exists
-                if client.auto_refresh_retries_count > client.auto_refresh_token_retries_attempted:
-                    client.auto_refresh_token_retries_attempted += 1
-                else:
-                    raise Exception("Maximum auto refresh token attempts for the client :{} reached."
-                                    "".format(client.auto_refresh_token_retries_attempted))
 
             if client.auto_refresh_token_method:
                 refresh_token_method = client.auto_refresh_token_method
             else:
                 refresh_token_method = refresh_token
 
-            refresh_token_method(client=client)
+            while True:
+                if client.auto_refresh_retries_count is not None:
+                    # client.auto_refresh_retries_count as None signifies no limits for token refresh retry exists
+                    if client.auto_refresh_retries_count > client.auto_refresh_token_retries_attempted:
+                        client.auto_refresh_token_retries_attempted += 1
+                    else:
+                        raise Exception("Maximum auto refresh token attempts for the client :{} reached."
+                                        "".format(client.auto_refresh_token_retries_attempted))
+                try:
+                    client.token = None
+                    client.taxation_id = None
+                    refresh_token_method(client=client)
+                    client.auto_refresh_token_retries_attempted = 0
+                    break
+                except Exception as e:
+                    time.sleep(refresh_token_retry_delay_seconds)
 
         elif response.status_code in [403]:
             if attempted_connection_error_retries < connection_error_retries:
@@ -263,10 +271,6 @@ def get_otp_manually(client=None):
 
 
 def refresh_token(client=None):
-    retries = refresh_token_retry_attempts
-    retry_seconds = refresh_token_retry_delay_seconds
-    client.token = None
-    client.taxation_id = None
     otp_retrieval_method = getattr(client, "otp_retrieval_method")
     if not otp_retrieval_method:
         otp_retrieval_method = get_otp_manually
@@ -274,14 +278,8 @@ def refresh_token(client=None):
     otp = otp_retrieval_method(client=client)
     if not otp:
         raise Exception("Invalid OTP !!")
-    while True:
-        try:
-            client.validate_otp(otp=otp)
-            break
-        except Exception as e:
-            if retries < 0:
-                retries -= 1
-                time.sleep(retry_seconds)
-            else:
-                raise Exception("Invalid OTP !!")
+    try:
+        client.validate_otp(otp=otp)
+    except:
+        raise Exception("Invalid OTP !!")
     return client

@@ -118,7 +118,6 @@ def send_request(action=None, payload=None, backoff_factor=request_retry_backoff
                     client.token = None
                     client.taxation_id = None
                     refresh_token_method(client=client)
-                    client.auto_refresh_token_retries_attempted = 0
                     break
                 except Exception as e:
                     time.sleep(refresh_token_retry_delay_seconds)

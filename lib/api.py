@@ -2,15 +2,15 @@ from hashlib import sha256
 import re
 
 from lib.utils import send_request
-from lib.constants import otp_generation_secret
+from lib.constants import otp_generation_secret, refresh_token_retries_attempts
 
 
 class APIClient:
 
-    def __init__(self,  mobile_no=None,
+    def __init__(self, mobile_no=None,
                  otp_retrieval_method=None,
                  auto_refresh_token=True,
-                 auto_refresh_retries_count=3):
+                 auto_refresh_retries_count=refresh_token_retries_attempts):
         self.otp_retrieval_method = otp_retrieval_method  # Custom method for retrieval of OTP
         self.auto_refresh_token = auto_refresh_token    # Flag to enable / disable auto refreshing of token
         # Number of auto token retries to be attempted, if enabled.

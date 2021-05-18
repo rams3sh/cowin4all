@@ -224,41 +224,49 @@ def get_applicable_sessions(client=None, pin_codes=None,
     return filtered_sessions
 
 
+def save_captcha_2_png(captcha=None):
+    file_path = os.path.join(tempfile.gettempdir(), str(datetime.datetime.now().timestamp()) + "_captcha")
+
+    with open(file_path + ".svg", 'w') as f:
+        f.write(captcha)
+
+    drawing = svg2rlg(file_path + ".svg")
+    captcha_image_path = file_path + ".png"
+    renderPM.drawToFile(drawing, captcha_image_path, fmt="PNG")
+    os.remove(file_path + ".svg")
+    return captcha_image_path
+
+
 def get_captcha_input_manually(captcha=None, client=None, _initial_call=True, alert_method=None):
     # One can initialise a custom alerter method for alerting
     if _initial_call:
         if alert_method:
             alert_method()
 
-    while True:
-        file_path = os.path.join(tempfile.gettempdir(), str(datetime.datetime.now().timestamp())+"_captcha")
-        with open(file_path+".svg", 'w') as f:
-            f.write(captcha)
+    captcha_image_path = save_captcha_2_png(captcha=captcha)
 
-        drawing = svg2rlg(file_path+".svg")
-        renderPM.drawToFile(drawing, file_path+".png", fmt="PNG")
+    layout = [[sg.Image(captcha_image_path)],
+              [sg.Text("Enter Captcha Below")],
+              [sg.Input()],
+              [sg.Button('Submit', bind_return_key=True)],
+              ]
+    if client:
+        layout[3] += [sg.Button('Refresh')]
 
-        layout = [[sg.Image(file_path+".png")],
-                  [sg.Text("Enter Captcha Below")],
-                  [sg.Input()],
-                  [sg.Button('Submit', bind_return_key=True)],
-                  ]
-        if client:
-            layout[3] += [sg.Button('Refresh')]
-
-        window = sg.Window('Enter Captcha', layout)
-        event, values = window.read()
-        if event == "Refresh":
-            os.remove(file_path+".svg")
-            os.remove(file_path + ".png")
-            return get_captcha_input_manually(captcha=client.get_captcha(), client=client, _initial_call=False)
-        else:
-            window.close()
-            os.remove(file_path+".svg")
-            os.remove(file_path + ".png")
-            if values:
+    window = sg.Window('Enter Captcha', layout)
+    event, values = window.read()
+    if event == "Refresh":
+        os.remove(captcha_image_path)
+        return get_captcha_input_manually(captcha=client.get_captcha(), client=client, _initial_call=False)
+    else:
+        window.close()
+        os.remove(captcha_image_path)
+        if values:
+            # The below check is to consider closing of window without entering any captcha.
+            # NoneType does not have strip attribute
+            if values[1]:
                 return values[1].strip()
-            return
+        return
 
 
 def get_otp_manually(client=None):

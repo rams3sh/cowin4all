@@ -172,7 +172,7 @@ client = APIClient(mobile_no=mobile_number,
 
 
 ```
-The above snippet if from my internal setup which uses beautiful app from [ushahidi](https://github.com/ushahidi/SMSSync/) for forwarding SMS from phone to 
+The above snippet is from my internal setup which uses app from [ushahidi](https://github.com/ushahidi/SMSSync/) for forwarding SMS from phone to 
 the `put_otp` endpoint
 
 One can setup a simple web server and expose it to public / local network and configure the above mentioned app to 
@@ -183,10 +183,10 @@ This idea was inspired from the earlier code open sourced by [bombardier-gif](ht
 There can be various methods in terms of how an input can be retrieved. 
 
 For example, OTP can be fed into a telegram bot by the user manually and bot can feed it back to the auto book system. 
-Similar scenarios for captchas as well. 
+Similar scenarios / methods can be considered for  handling captchas as well. 
 
-Commonly used methods are part of `utils.py` such as `get_otp_manually`, `get_captcha_input_manually`. You may either use them
-or write your own custom retrieval method. 
+Also, commonly used methods are part of `utils.py` such as `get_otp_manually`, `get_captcha_input_manually`. You may either use them
+or write your own custom retrieval method to get from user and feed back to your logic. 
 
 ## 4. Thanks to
 
@@ -204,7 +204,11 @@ or write your own custom retrieval method.
    free version delays the sending of SMS to webhook. This is what led me to search for open source alternative leading to find 
    SMSSync app by [ushahidi](https://github.com/ushahidi/SMSSync/).
 
-## 5. Please donate
+## 5. TODO
+1. Captcha cracking algorithm
+
+
+## 6. Please donate
 
 If you like this project. Kindly donate to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
 

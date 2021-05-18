@@ -202,7 +202,7 @@ or write your own custom retrieval method to get from user and feed back to your
    This is way more efficient than IFTTT in terms of customisation. Also good part is , it is open source.
 
    
-2. Couple of people who worked on earlier version of automation of various cowinibooking apps.
+2. Couple of people who worked on earlier version of automation of various cowin booking apps.
 
     i. [pallupz](https://github.com/pallupz/covid-vaccine-booking) - The `get_captcha_input_manually` method has been 
    shamelessy copied from pallupz's code base. 

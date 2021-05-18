@@ -218,5 +218,5 @@ or write your own custom retrieval method to get from user and feed back to your
 
 ## 6. Please donate
 
-If you like this project, consider donate to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
+If you like this project, consider donating to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
 

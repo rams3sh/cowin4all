@@ -115,9 +115,10 @@ auto_book()
 ```
 
 
-## 3. Custom OTP Retrieval method plugin
+## 3. Pluggable custom OTP retrieval method
 
-The SDK supports external pluggable otp_retrieval_method. This is to support faster retrieval OTP mechanisms.
+This CoWIN code base can be used as SDK for new CoWIN booking apps and this supports external pluggable otp_retrieval_method. 
+This is to support various OTP retrieval mechanisms.
 
 One possible method is to install an app that can forward an SMS to a webhook and the webhook can fixate the OTP 
 back in your workflow. Below pseduo snippet based on FastAPI library should give an idea on how that can be done.
@@ -171,34 +172,39 @@ client = APIClient(mobile_no=mobile_number,
 
 
 ```
-The above snippet if from my internal app which uses beautiful app from [ushahidi](https://github.com/ushahidi/SMSSync/).
+The above snippet if from my internal setup which uses beautiful app from [ushahidi](https://github.com/ushahidi/SMSSync/) for forwarding SMS from phone to 
+the `put_otp` endpoint
 
-One can setup a simpleweb server and expose it to public / local network and configure the above mentioned app to 
+One can setup a simple web server and expose it to public / local network and configure the above mentioned app to 
 forward the SMS from CoWIN to the hosted web api. This ensures that OTP gets automatically fed without much effort.
 
-This idea was inspired from the earlier code opensourced by [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking).
+This idea was inspired from the earlier code open sourced by [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking).
 
-This code base differs from the other code in terms of auto-refresh and pluggable module support of the base code.
+There can be various methods in terms of how an input can be retrieved. 
 
-The ideas are limitless in terms of how an input can be retrieved.
+For example, OTP can be fed into a telegram bot by the user manually and bot can feed it back to the auto book system. 
+Similar scenarios for captchas as well. 
 
-The OTP can be fed into a telegram bot by the user manually and bot can feed it back to the auto book system. 
-Same case for captchas as well. 
-
+Commonly used methods are part of `utils.py` such as `get_otp_manually`, `get_captcha_input_manually`. You may either use them
+or write your own custom retrieval method. 
 
 ## 4. Thanks to
 
-1. [ushahidi](https://github.com/ushahidi/SMSSync/) for the wonderfull SMS gateway app. 
+1. [ushahidi](https://github.com/ushahidi/SMSSync/) for the wonderful SMS gateway app. 
    This is way more efficient than IFTTT in terms of customisation. Also good part is , it is open source.
 
    
 2. Couple of people who worked on earlier version of automation of various cowinibooking apps.
 
-    i. [pallupz](https://github.com/pallupz/covid-vaccine-booking)
+    i. [pallupz](https://github.com/pallupz/covid-vaccine-booking) - The `get_captcha_input_manually` method has been 
+   shamelessy copied from pallupz's code base. 
    
-   ii. [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking)
-
+   ii. [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking) - The idea of forwarding SMS from the phone to
+   webhook came from bombardier-gif's code base. However I found IFTTT not feasible because it requires payment for immediate SMS forward, 
+   free version delays the sending of SMS to webhook. This is what led me to search for open source alternative leading to find 
+   SMSSync app by [ushahidi](https://github.com/ushahidi/SMSSync/).
 
 ## 5. Please donate
 
 If you like this project. Kindly donate to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
+

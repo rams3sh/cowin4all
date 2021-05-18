@@ -174,7 +174,7 @@ The above snippet if from my internal app which uses beautiful app from [ushahid
 One can setup a simpleweb server and expose it to public / local network and configure the above mentioned app to 
 forward the SMS from CoWIN to the hosted web api. This ensures that OTP gets automatically fed without much effort.
 
-This idea was inspired from the earlier code opensourced by [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking)].
+This idea was inspired from the earlier code opensourced by [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking).
 
 This code base differs from the other code in terms of auto-refresh and pluggable module support of the base code.
 

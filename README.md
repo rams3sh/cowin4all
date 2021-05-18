@@ -110,6 +110,8 @@ def auto_book():
             logger.error(e)
             client.auto_refresh_token_retries_attempted = 0
         time.sleep(random.uniform(poll_time_range[0], poll_time_range[1]))
+
+auto_book()
 ```
 
 

@@ -314,7 +314,7 @@ A sample screenshot below :-
    This is way more efficient than IFTTT in terms of customisation. Also good part is , it is open source.
 
    
-2. Couple of people who worked on earlier version of automation of various cowinibooking apps.
+2. Couple of people who worked on earlier version of automation of various cowin booking apps.
 
     i. [pallupz](https://github.com/pallupz/covid-vaccine-booking) - The `get_captcha_input_manually` method has been 
    shamelessy copied from pallupz's code base. 
@@ -339,5 +339,5 @@ A sample screenshot below :-
 
 ## 6. Please donate
 
-If you like this project, consider donate to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
+If you like this project, consider donating to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
 

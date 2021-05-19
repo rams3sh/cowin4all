@@ -143,7 +143,10 @@ I wrote a little hacky app `cowin4all_app.py` using the cowin4all SDK with the s
 [ngrok](https://dashboard.ngrok.com/get-started/setup) was used for exposing my internal API Service endpoint to the internet
 in case I had to book slots for my friends.
 
-Below screenshots can help you setup the relay integrations in SMSSync app.
+### 3.1 Beneficiary Registration 
+
+1. You are required to register the beneficiary in the CoWIN portal.
+2. Once the registration is done, follow further steps stated below.
 
 ### 3.1. SMSSync Setup 
 
@@ -258,8 +261,10 @@ A sample screenshot below :-
      with voice of `Kimberly, Female` with text `refresh OTP`.
 
 ## 5. TODO
-1. Captcha cracking algorithm
-2. Telegram Bot Integration
+
+1. Detailed non technical user friendly README.
+2. Easy installation script.
+3. Telegram Bot Integration
 
 
 ## 6. Please donate

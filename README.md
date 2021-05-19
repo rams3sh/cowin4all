@@ -283,4 +283,4 @@ There are enough automations already which does not give opportunity for others 
 
 In times , like these we are supposed to help each other and I hope this helps lot of people.
 
-Use it at your own risk. author claims no responsibility in illegitimate use of this code.
+Use it at your own risk. author assumes no responsibility or liability in case of illegitimate use of this code.

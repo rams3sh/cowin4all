@@ -133,8 +133,8 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
 def get_applicable_sessions(client=None, pin_codes=None,
                             district_ids=None,
                             dates=None, days_range: int = None,
-                            vaccine_type: str = None,
-                            payment_type: str = None, age: int = None, dose: int =None):
+                            vaccine_type: (list, str) = None,
+                            payment_type: str = None, age: int = None, dose: int = None):
 
     if payment_type in ["any", None]:
         payment_type = payment_types
@@ -145,6 +145,8 @@ def get_applicable_sessions(client=None, pin_codes=None,
 
     if vaccine_type in ["any", None]:
         vaccine_type = vaccine_types
+    elif isinstance(vaccine_type, list) and set(vaccine_types).intersection(set(vaccine_type)):
+        pass  # Nothing to do
     elif vaccine_type.lower() not in vaccine_types:
         return {}
     else:

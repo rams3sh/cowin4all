@@ -1,8 +1,20 @@
-# Cowin4All 
+# cowin4All 
 
-CoWIN SDK / app to automate booking of vaccine slot in CoWin.
+cowin4all SDK / app to automate booking of vaccine slot in CoWin.
 
-## 1 Setup
+cowin4all SDK refers to the code present in `lib/` folder. This is a generic SDK to interact with CoWIN portal with useful 
+additional batteries / features. 
+
+cowin4all app refers to the code present in `cowin4all_app.py` folder.
+
+## 1. Background 
+
+I have been trying to book a slot for myself for more than a month, but I couldn't get to reserve even one slot.
+
+Thus the birth of cowin4all.
+
+## 2. cowin4all SDK 
+### 2.1 Setup
 1. Clone this repo and traverse to the code directory
     ```shell
    git clone git@github.com:rams3sh/cowin4all.git && cd cowin4all
@@ -17,7 +29,7 @@ CoWIN SDK / app to automate booking of vaccine slot in CoWin.
    pip3 install -r requirements.txt 
    ```
 
-## 2. Usage
+### 2.2. Usage
 
 Below snippet should give you an idea of using the cowin4all as SDK.
 
@@ -115,7 +127,7 @@ auto_book()
 ```
 
 
-## 3. Pluggable custom OTP retrieval method
+### 2.3. Pluggable custom OTP retrieval method
 
 This code base supports external pluggable otp_retrieval_method. 
 This is to support various OTP retrieval mechanisms.
@@ -196,6 +208,106 @@ understanding of it, I left it as is.
 Further, commonly used methods are part of `utils.py` such as `get_otp_manually`, `get_captcha_input_manually`. You may either use them
 or write your own custom retrieval method to get from user and feed back to your logic. 
 
+
+## 3. cowin4all App
+
+I wrote a little hacky app `cowin4all_app.py` using the cowin4all SDK with the setup as mentioned in the below diagram. 
+
+
+![Cowin Setup](media/cowin4all.jpg)
+
+[ngrok](https://dashboard.ngrok.com/get-started/setup) was used or exposing my internal API Service endpoint to the internet
+in case I had to book slots for my friends.
+
+Below screenshots can help you setup the relay integrations in SMSSync app.
+
+### 3.1. SMSSync Setup 
+
+1. Install the SMSSyncAPP and set the app as default SMS app. 
+
+
+2. Go to Integration > Custom Web Service > (+) -> Create a new custom web service integration
+
+
+3. Below are two images detailing setup in case of local lan based setup and internet based setup.
+   The red highlighted box are the changes to be configured.
+   
+
+   * **Option 1 . LAN based configuration**  
+      Find the IP of the system where you are going to run the app and modify it accordingly. 
+     My systems IP was `192.168.29.227`. Hence it's appearence in the url in the below screenshot.
+     ![LAN Setup](media/smssync_lan_setup.png)
+
+
+   * **Option 2 . Internet based configuration**
+     ![Internet Setup](media/smssync_internet_setup.png)
+
+
+4. Update the configuration. 
+
+
+5. Enable the integration.
+
+   ![Integration Enable](media/smssync_integration_enable.png)
+
+6. Go to Filters > CoWIN OTP Relay (or to whichever name you have kept for the intergation service) and add "CoWIN" 
+   as keyworkd filter. This will reduce non-related SMS from getting sent to your API service.
+
+   ![Keyword Filter](media/smssync_filters.png)
+
+
+7. Enable the keyword filter.
+
+   ![Filter Enable](media/smssync_filter_enable.png)
+
+8. Enable the SMSSync Service
+
+   ![img.png](media/smssync_enable.png)
+
+
+Now that the service is running, the app will start forwarding all SMS having "CoWIN" keyword to 
+the configured endpoint.
+
+### 3.2 cowin4all App Setup
+
+
+1. Modify the requirements.txt by uncommenting the packages pertaining to `uvicorn` and `fastapi`. 
+
+   
+2. Install the requirements as mentioned in section `2.1` point 3.
+
+
+3. Since the cowin4all app at current state works based on hardcoded beneficiary information, you may have to modify
+the code a little. Search for `####### BEFECIARY BOOKING DETAILS #######` and fill up the relevant information. 
+   
+
+5. Once that is done, you can run the app using below command. 
+`uvicorn cowin4all_app:app --port 8081 --host 0.0.0.0`
+   
+
+6. If you are planning to expose the app over internet through ngrok. You may have to additionally execute 
+   the below command
+`ngrok http 8081`
+
+
+**Note:**
+
+   Please note , you may have to install [VLC](https://www.videolan.org/) over and above the mentioned packages for 
+   playing alert sound. I couldn't find any platform agnostic python packages that can play sound, hence relied on VLC
+   which was already part of my system.
+
+   The cowin4all app has been tested in Linux. It should work well with other OSes as well. 
+
+   The captcha has to be entered manually handling the cowin4all app. This is not automated yet. 
+   This could be however sent through a telegram bot and the captcha can be requested from the user. 
+   This will remove dependency on the user to sit before the system until booking confirmation. 
+   I have been working on this. 
+   
+A sample screenshot below :- 
+  
+![img.png](media/telegram_bot.png)
+   
+
 ## 4. Thanks to
 
 1. [ushahidi](https://github.com/ushahidi/SMSSync/) for the wonderful SMS gateway app. 
@@ -210,7 +322,16 @@ or write your own custom retrieval method to get from user and feed back to your
    ii. [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking) - The idea of forwarding SMS from the phone to
    webhook came from bombardier-gif's code base. However I found IFTTT not feasible because it requires payment for immediate SMS forward, 
    free version delays the sending of SMS to webhook. This is what led me to search for open source alternative leading to find 
-   SMSSync app by [ushahidi](https://github.com/ushahidi/SMSSync/).
+   SMSSync app by [ushahidi](https://github.com/ushahidi/SMSSync/). Also bombarider-gif's code base had lot of moving parts. 
+   The SMS gets stored in an external key-value DB store kvdb.io and the python script has to poll the kvdb continously 
+   for retrieving the OTP. These have resource and IO cost. This led me to create my app with API endpoint to be hit
+   by an external SMS relayer directly instead of using any intermediate storage.
+
+
+3. Audio Sources  
+   * soundbible.com for `resources/Siren-SoundBible.com-1094437108.mp3` . Link [here](https://soundbible.com/1233-Siren.html).
+   * [voiceover](https://voicemaker.in) - for `resources/refresh_OTP.mp3` . Sound generated using `Neural TTS` AI Engine 
+     with voice of `Kimberly, Female` with text `refresh OTP`.
 
 ## 5. TODO
 1. Captcha cracking algorithm

@@ -265,3 +265,14 @@ A sample screenshot below :-
 ## 6. Please donate
 
 If you like this project, consider donating to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
+
+
+
+## Disclaimer
+
+This has been released with good intentions of helping all in getting equal chances at booking slots in CoWIn. 
+There are enough automations already which does not give opportunity for others to book slots.
+
+In times , like these we are supposed to help each other and I hope this helps lot of people.
+
+Use it at your own risk. author claims no responsibility in illegitimate use of the open sourced code.

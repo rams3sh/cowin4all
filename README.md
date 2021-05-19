@@ -5,15 +5,28 @@ cowin4all SDK / app to automate booking of vaccine slot in CoWin.
 cowin4all SDK refers to the code present in `lib/` folder. This is a generic SDK to interact with CoWIN portal with useful 
 additional batteries / features. 
 
-cowin4all app refers to the code present in `cowin4all_app.py` file.
+cowin4all app (`cowin4all_app.py`) refers to booking automation app using this SDK.
+
 
 ## 1. Background 
 
 I have been trying to book a slot for myself for more than a month, but I couldn't get to reserve even one slot.
 
-Thus the birth of cowin4all.
+Thus the birth of cowin4all. 
+
+cowin4all was primarily focussed to be written as an SDK first and then as an automation app.
+There has been lot of automations written by people all around which does not allow any one to book slots for themselves.
+
+I hope releasing cowin4all as an SDK will make the playing ground more even. 
+
+My only request to the consumer of this app is to help not so tech savvy / non-provileged 
+people like your servant / maid / watch(men|women)  etc. in getting their slots for vaccination by adding them as 
+beneficiaries in your account. 
+
+We're all in this together.
 
 ## 2. cowin4all SDK 
+
 ### 2.1 Setup
 1. Clone this repo and traverse to the code directory
     ```shell
@@ -24,108 +37,19 @@ Thus the birth of cowin4all.
     ```shell
     python3 -m virtualenv env
     ````
-3. Install the package requirements
+3. Activate the virtual environment 
     ```shell
-   pip3 install -r requirements.txt 
+   source env/bin/activate  
+   ```
+
+4. Install the package requirements
+   ```shell
+   pip3 install -r requirements.txt
    ```
 
 ### 2.2. Usage
 
-Below snippet should give you an idea of using the cowin4all as SDK.
-
-```python3
-from threading import Thread
-import logging
-import random
-import time
-import os
-
-from lib.api import APIClient
-from lib.utils import get_applicable_sessions, get_captcha_input_manually
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-# Below data are dummy. Refer lib/constants.py for the applicable values for each variable below.
-mobile_number = 1234567890
-beneficiary_ids = [1234567, 12345678, 8765432, 123456789]
-age = 18
-dose = 1
-district_ids = 123456 # Using district then filtering the pincodes further to filter will reduce network calls
-pin_codes = [600035, 600006]
-dates = ["18-05-2021", "19-05-2021", "20-05-2021", "21-05-2021"] 
-vaccine_type = "covishield"
-payment_type = "any"
-
-
-# Other Settings
-poll_time_range = (15.0, 20.0) 
-
-# Very Linux specific. My system has cvlc , hence used it. You might have to reconsider using the command.
-
-def play_sound(file_path):
-        os.system("cvlc {} --play-and-exit".format(file_path))
-
-
-        
-def booking_alert(count=None):
-    siren = Thread(target=play_sound, args=["resources/Siren-SoundBible.com-1094437108.mp3",], daemon=True)
-    siren.start()
-    
-    
-def auto_book():
-    global pin_codes, vaccine_type, payment_type, dose, age, dates
-    client = APIClient(mobile_no=mobile_number)
-    while True:
-        try:
-            logger.info("Polling ...")
-            client.get_beneficiaries()
-            centres = get_applicable_sessions(client=client, district_ids=district_ids,
-                                              vaccine_type=vaccine_type,
-                                              payment_type=payment_type, dose=dose, age=age, dates=dates)
-            temp_centres = {}
-            for centre in centres:
-                if centres[centre]["pin_code"] in pin_codes:
-                    temp_centres.update({centre: centres[centre]})
-            centres = temp_centres
-            logger.info("Available centres:{}".format(centres))
-            if centres:
-                logger.info("Some centres found !!")
-                for centre in centres:
-                    for session in centres[centre]["sessions"]:
-                        if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
-                            logger.info("Available slots for dose {} : {} is less than the number of beneficiary !!"
-                                         "".format(dose, session["available_capacity_dose{}".format(dose)]))
-                            continue
-                        booking_alert(3)
-                        # for slot in session["slots"]: slot is not important for consideration
-                        slot = session["slots"][-1]
-                        c = client.get_captcha()
-                        captcha = get_captcha_input_manually(captcha=c, client=client)
-                        appointment_id = None
-                        try:
-                            appointment_id = client.schedule_booking(beneficiaries=beneficiary_ids,
-                                                                     session_id=session["session_id"],
-                                                                     captcha=captcha,
-                                                                     dose_number=dose,
-                                                                     center_id=centre,
-                                                                     slot=slot)
-                        except Exception as e:
-                            appointment_id = None
-                        if not appointment_id:
-                            continue
-                        path = client.download_confirmation(appointment_id=appointment_id,
-                                                            destination_file_path="confirmation.pdf")
-                        logger.info("Successfully Booked!!  Confirmation form is available at {}!!".format(path))
-                        return
-        except Exception as e:
-            logger.error(e)
-            client.auto_refresh_token_retries_attempted = 0
-        time.sleep(random.uniform(poll_time_range[0], poll_time_range[1]))
-
-auto_book()
-```
-
+Refer the `cowin4all_app.py` for reference
 
 ### 2.3. Pluggable custom OTP retrieval method
 
@@ -335,9 +259,9 @@ A sample screenshot below :-
 
 ## 5. TODO
 1. Captcha cracking algorithm
+2. Telegram Bot Integration
 
 
 ## 6. Please donate
 
 If you like this project, consider donating to [TN CM Public Relief Fund](https://ereceipt.tn.gov.in/Cmprf/Cmprf)
-

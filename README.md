@@ -5,7 +5,7 @@ cowin4all SDK / app to automate booking of vaccine slot in CoWin.
 cowin4all SDK refers to the code present in `lib/` folder. This is a generic SDK to interact with CoWIN portal with useful 
 additional batteries / features. 
 
-cowin4all app refers to the code present in `cowin4all_app.py` folder.
+cowin4all app refers to the code present in `cowin4all_app.py` file.
 
 ## 1. Background 
 

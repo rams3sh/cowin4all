@@ -216,17 +216,17 @@ I wrote a little hacky app `cowin4all_app.py` using the cowin4all SDK with the s
 
 ![Cowin Setup](media/cowin4all.jpg)
 
-[ngrok](https://dashboard.ngrok.com/get-started/setup) was used or exposing my internal API Service endpoint to the internet
+[ngrok](https://dashboard.ngrok.com/get-started/setup) was used for exposing my internal API Service endpoint to the internet
 in case I had to book slots for my friends.
 
 Below screenshots can help you setup the relay integrations in SMSSync app.
 
 ### 3.1. SMSSync Setup 
 
-1. Install the SMSSyncAPP and set the app as default SMS app. 
+1. Install the SMSSync App and set the app as default SMS app. 
 
 
-2. Go to Integration > Custom Web Service > (+) -> Create a new custom web service integration
+2. Go to `Integration > Custom Web Service > (+)` - Create a new custom web service integration
 
 
 3. Below are two images detailing setup in case of local lan based setup and internet based setup.
@@ -235,7 +235,7 @@ Below screenshots can help you setup the relay integrations in SMSSync app.
 
    * **Option 1 . LAN based configuration**  
       Find the IP of the system where you are going to run the app and modify it accordingly. 
-     My systems IP was `192.168.29.227`. Hence it's appearence in the url in the below screenshot.
+     My system's IP was `192.168.29.227`. Hence it's appearance in the url in the below screenshot.
      ![LAN Setup](media/smssync_lan_setup.png)
 
 
@@ -250,8 +250,8 @@ Below screenshots can help you setup the relay integrations in SMSSync app.
 
    ![Integration Enable](media/smssync_integration_enable.png)
 
-6. Go to Filters > CoWIN OTP Relay (or to whichever name you have kept for the intergation service) and add "CoWIN" 
-   as keyworkd filter. This will reduce non-related SMS from getting sent to your API service.
+6. Go to `Filters > CoWIN OTP Relay` (or to whichever name you have kept for the integration service) and add "CoWIN" 
+   as keyword filter. This will reduce non COWIN SMS from getting sent to your API service.
 
    ![Keyword Filter](media/smssync_filters.png)
 

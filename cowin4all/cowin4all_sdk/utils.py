@@ -11,7 +11,7 @@ import tempfile
 import datetime
 import time
 
-from lib.constants import endpoint_map, default_request_retry_backoff_factor_seconds, default_request_timeout_seconds, \
+from cowin4all_app.cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_factor_seconds, default_request_timeout_seconds, \
     default_connection_error_retry_attempts, default_blocked_request_retry_backoff_factor_seconds, \
     delay_refresh_token_retry_delay_seconds, default_user_agent, \
     vaccine_types, doses, payment_types, minimum_age_limits

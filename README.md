@@ -2,7 +2,7 @@
 
 cowin4all SDK / app to automate booking of vaccine slot in CoWin.
 
-cowin4all SDK refers to the code present in `lib/` folder. This is a generic SDK to interact with CoWIN portal with useful 
+cowin4all SDK refers to the code present in `sdk/` folder. This is a generic SDK to interact with CoWIN portal with useful 
 additional batteries / features. 
 
 cowin4all app (`cowin4all_app.py`) refers to booking automation app using this SDK.
@@ -260,12 +260,29 @@ A sample screenshot below :-
    * [voiceover](https://voicemaker.in) - for `resources/refresh_OTP.mp3` . Sound generated using `Neural TTS` AI Engine 
      with voice of `Kimberly, Female` with text `refresh OTP`.
 
+## 5. Other similar projects
+
+1. https://github.com/pallupz/covid-vaccine-booking
+
+
+2. https://github.com/bombardier-gif/covid-vaccine-booking
+
+
+3. https://chrome.google.com/webstore/detail/covid-vaccine-slot-checke/hmmahfccoaoebmjhmcnbbomomkimomhi?hl=en
+
+
+4. https://chrome.google.com/webstore/detail/cowin-bot/ipdhilmkmmbfeilncgchfdabkpnhbeog
+
+
 ## 5. TODO
 
-1. Detailed non technical user friendly README.
-2. Easy installation script.
-3. Telegram Bot Integration
+1. Detailed non-technical user-friendly README.
+   
 
+2. Easy installation script for the end user.
+
+
+3. Telegram Bot Integration
 
 ## 6. Please donate
 

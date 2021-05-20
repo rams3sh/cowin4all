@@ -1,62 +1,29 @@
-from threading import Thread
-import threading
 import time
 import logging
 import random
-import os
+
 
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually
-from cowin4all_app.utils import get_api_service_context
+from api_service import get_api_service_worker, get_otp_from_webhook
+from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS, CONFIRMATION_PDF_PREFIX
+from utils import booking_alert, get_booking_details
 
-###### CUSTOM METHODS ##########
+logging.getLogger('asyncio').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 
-
-def get_otp(client=None):
-    global otp_wait, otp, logger
-    otp = None
-    logger.info("Waiting for OTP !! ")
-    otp_alert(sleep=10)
-    otp_wait.wait()
-    otp_wait.clear()
-    logger.info("OTP Received: "+str(otp))
-    return otp
-
-
-def play_sound(file_path):
-    os.system("vlc --intf dummy --play-and-exit".format(file_path))
-
-
-def otp_alert(sleep=10):
-    global otp_alert_running, otp
-
-    def wait_and_alert():
-        global otp_alert_running
-        logger.info("Waiting for alerting the user for OTP in case not received !!")
-        time.sleep(10)
-        if otp:
-            otp_alert_running = False
-            return
-        else:
-            play_sound(os.path.join("audio", "refresh_OTP.mp3"))
-
-    if not otp_alert_running:
-        otp_alert_running = True
-        alert = Thread(target=wait_and_alert, daemon=True)
-        alert.start()
-    else:
-        return
-
-
-def booking_alert(count=None):
-    siren = Thread(target=play_sound, args=[os.path.join("audio", "Siren-SoundBible.com-1094437108.mp3")],
-                   daemon=True)
-    siren.start()
+logger = logging.getLogger(__name__)
 
 
 def auto_book():
     global pin_codes, vaccine_type, payment_type, dose, age, dates
-    with get_api_service_context():
+    api_service = get_api_service_worker()
+
+    client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=True,
+                       auto_refresh_retries_count=AUTO_TOKEN_REFRESH_ATTEMPTS)
+
+    with api_service():
         while True:
             try:
                 logger.info("Polling ...")
@@ -78,8 +45,8 @@ def auto_book():
                                 logger.info("Available slots for dose {} : {} is less than the number of beneficiary !!"
                                              "".format(dose, session["available_capacity_dose{}".format(dose)]))
                                 continue
-                            booking_alert(3)
-                            # for slot in session["slots"]: slot is not important for consideration
+                            booking_alert()
+                            # Most latest slot
                             slot = session["slots"][-1]
                             c = client.get_captcha()
                             captcha = get_captcha_input_manually(captcha=c, client=client)
@@ -96,13 +63,14 @@ def auto_book():
                             if not appointment_id:
                                 continue
                             path = client.download_confirmation(appointment_id=appointment_id,
-                                                                destination_file_path="confirmation.pdf")
+                                                                destination_file_path=
+                                                                CONFIRMATION_PDF_PREFIX + "_confirmation.pdf")
                             logger.info("Successfully Booked!!  Confirmation form is available at {}!!".format(path))
                             return
             except Exception as e:
                 logger.error(e)
                 client.auto_refresh_token_retries_attempted = 0
-            time.sleep(random.uniform(poll_time_range[0], poll_time_range[1]))
+            time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 
 
 ####### BEFECIARY BOOKING DETAILS #######
@@ -117,22 +85,6 @@ dates = ["19-05-2021", "20-05-2021", "21-05-2021"]  # List of dates when you wou
 vaccine_type = ["covishield", "sputnik v"]  # Example values : "any" / "covaxin" / ["covaxin", "covisheield"]
 payment_type = "any"  # Example values: "any" / "paid" / "free"
 
-######## GLOBAL SETTINGS ##########
-
-otp = None
-otp_wait = threading.Event()
-otp_alert_running = False
-poll_time_range = (15.0, 20.0)
-client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp, auto_refresh_token=True,
-                   auto_refresh_retries_count=3)
-auto_book_worker = Thread(target=auto_book, daemon=True)
-log_format = "%(asctime)s — [Module Name: %(name)s] — [PID: %(process)d] — " \
-               "[Thread : %(threadName)s] —  %(levelname)s — [Method and Line " \
-               "No: %(funcName)s:%(lineno)d] — %(message)s"
-logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.WARNING)
-logging.basicConfig(format=log_format, level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-auto_book_worker.start()
+if __name__ == "__main__":
+    #auto_book()
+    get_booking_details()

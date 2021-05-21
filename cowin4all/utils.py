@@ -4,7 +4,7 @@ from copy import deepcopy
 import os
 import tabulate
 
-from settings import AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH
+from settings import AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH, BOOKING_MODES
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import refresh_token
 from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types
@@ -35,7 +35,7 @@ def display_table(dict_list, exclude_keys=None, default_attribute_name=None):
     try:
         header = ["S.No"] + [key.title().replace("_", " ") for key in temp_dict[0].keys()]
         rows = [[idx + 1] + list(x.values()) for idx, x in enumerate(temp_dict)]
-    except (AttributeError):
+    except (AttributeError, TypeError):
         header = ["S.No"] + [default_attribute_name or "Value"]
         rows = [[i+1, d] for i, d in zip(range(len(dict_list)), dict_list)]
     print("\n", tabulate.tabulate(rows, header, tablefmt="grid"))
@@ -68,12 +68,24 @@ def validate_selected_beneficiaries(beneficiaries):
                          "beneficiaries' vaccine type is same !!")
 
 
+def validate_serial_no(snos=None):
+
+    if not isinstance(snos, set):
+        snos = {snos}
+
+    for sno in snos:
+        int(sno)
+        if sno <= 0:
+            raise ValueError("Invalid S.No(s) provided. Kindly re-enter the values !!")
+
+
 def select_beneficiaries(beneficiaries):
     display_table(beneficiaries)
     s_nos = input("Enter S.No(s) of the beneficiaries for slot booking (in case of multiple "
                   "beneficiaries use ',' to separate S.No(s) : ")
-    s_nos = set([int(s.strip()) for s in s_nos.split(",")])
     try:
+        s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_beneficiaries = [beneficiaries[s - 1] for s in s_nos]
         validate_selected_beneficiaries(selected_beneficiaries)
     except IndexError:
@@ -93,6 +105,7 @@ def select_state(client=None):
                   "states use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_states = [states[s - 1] for s in s_nos]
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
@@ -111,6 +124,7 @@ def select_district(client=None, state_ids=None):
                   "districts use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_districts = [districts[s - 1] for s in s_nos]
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
@@ -119,14 +133,14 @@ def select_district(client=None, state_ids=None):
 
 
 def select_pin_code():
-    message = "Enter pin code belonging to district(s) selected previously, in case you would want to narrow down your" \
-              " location of vaccine, else just press enter. (in case of multiple " \
+    message = "\n\nEnter pin code belonging to district(s) selected previously, in case you would want to narrow " \
+              "down your location of vaccine, else just press enter. (in case of multiple " \
               "pin codes use ',' to separate them) : "
     selected_pin_codes = input(message)
 
     if selected_pin_codes:
         try:
-            selected_pin_codes = [int(p.strip()) for p in selected_pin_codes]
+            selected_pin_codes = set([int(p.strip()) for p in selected_pin_codes.split(",")])
         except (IndexError, ValueError):
             print("Invalid pin code(s) provided. Kindly re-enter the values !!")
             pin_codes = select_pin_code()
@@ -140,6 +154,7 @@ def select_vaccine():
                   "vaccine types use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_vaccine_options = [vaccine_types[s - 1] for s in s_nos]
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
@@ -162,6 +177,7 @@ def select_dates():
                   "dates use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_dates = [dates[s - 1] for s in s_nos]
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
@@ -176,6 +192,7 @@ def select_payment_type():
                   "payment types use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
+        validate_serial_no(s_nos)
         selected_payment_types = [payment_types[s - 1] for s in s_nos]
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
@@ -184,86 +201,162 @@ def select_payment_type():
     return selected_payment_types
 
 
-def get_booking_details():
-    mobile_number = input("Enter mobile number : ")
-    client = APIClient(mobile_no=mobile_number)
-    refresh_token(client=client)
-    retrieved_beneficiaries = client.get_beneficiaries()
+def select_booking_mode():
+    display_table(BOOKING_MODES)
+    s_no = input("Enter S.No of the booking mode to be considered while booking (choose only one): ")
+    try:
+        s_no = int(s_no)
+        validate_serial_no(snos=s_no)
+        selected_booking_mode = BOOKING_MODES[s_no-1]
+    except (IndexError, ValueError, TypeError):
+        print("Invalid S.No provided. Kindly re-enter the values !!")
+        selected_booking_mode = select_booking_mode()
 
-    booking_details = {"mobile_number": mobile_number}
+    return selected_booking_mode
 
-    beneficiaries = []
 
-    if not retrieved_beneficiaries:
-        print("No beneficiary is registered in the CoWIN site. Kindly register the beneficiaries directly through the "
-              "CoWIN site and run cowin4all.")
-        return
+def confirm_booking_details(booking_details):
+    print("\n", "-"*10, "\n")
+    print("CONFIRMATION")
+    print("\n", "-"*10, "\n")
+    print("\nPlease read through the details to be considered for the vaccine booking below and confirm before we can "
+          "proceed with automated booking !!.\n")
 
-    print("\nCollecting initial details ... !!\n")
-    for b in retrieved_beneficiaries:
-        age = get_possible_age(b["birth_year"])
-        dose = None
-        vaccine = None
-        booking_age_limit = None
+    print("\nList of beneficiaries :- ", "\n")
+    display_table(booking_details["beneficiaries"])
 
-        if age in minimum_age_limits:
-            # This is required, since age is calculated only based on the year that is provided from CoWIn.
-            # Hence it is not possible to determine the exact age if it falls in the border range of
-            # both categories. Hence the below ask.
-            age = input("Please type the actual age of beneficiary '{}' : ".format(b["name"]))
+    print("\nList of vaccine preference :- ", "\n")
+    display_table(booking_details["preferred_vaccine_types"])
 
-        if age >= 45:
-            booking_age_limit = 45
-        elif 18 <= age <= 44:
-            booking_age_limit = 18
-        else:
-            print("Beneficiary '{}' is not eligible to be vaccinated as on date. Skipping the beneficiary."
-                  "".format(b["name"]))
-            continue
+    print("\nList of district preference :- ", "\n")
+    display_table(booking_details["district_ids"], exclude_keys="district_id")
 
-        if b["dose1_date"] and b["dose2_date"]:
-            vaccine = b["vaccine"].lower().strip()
-            dose = "completed"
-        elif not b["dose1_date"]:
-            vaccine = None
-            dose = 1
-        else:
-            vaccine = b["vaccine"].lower().strip()
-            dose = 2
+    print("\nList of pin code preference. "
+          "\n\n PLEASE ENSURE THAT YOU ARE CONFIDENT ABOUT EXISTENCE OF THESE PINCODES. COWIN4ALL CANNOT VERIFY THESE "
+          "!!  ", "\n")
+    display_table(booking_details["pin_codes"])
 
-        if dose != "completed":
-            beneficiaries.append({"id": b["beneficiary_reference_id"],
-                                  "name": b["name"],
-                                  "age": age,
-                                  "booking_age_limit": booking_age_limit,
-                                  "awaited_dose": dose,
-                                  "vaccine": vaccine})
-        if not beneficiaries:
-            print("All beneficiaries have successfully completed their vaccination. "
-                  "There is nothing further to be done !! ")
+    print("\nList of date preference :- ", "\n")
+    display_table(booking_details["dates"])
+
+    print("\nList of payment preference :- ", "\n")
+    display_table(booking_details["payment_types"])
+
+    print("\nBooking mode preference :- ", "\n")
+    display_table([booking_details["booking_mode"]])
+
+    confirmation = select_yes_or_no(message="Confirm")
+
+    return confirmation
+
+
+def select_yes_or_no(message=None):
+    try:
+        confirmation = input("{} (type 'y' for Yes and 'n' for No) : ".format(message))
+        confirmation = confirmation.strip().lower()
+        if confirmation not in ["y", "n"]:
+            raise ValueError()
+    except (IndexError, ValueError):
+        print("Invalid value provided. Kindly re-enter the values !!")
+        confirmation = select_yes_or_no(message=message)
+
+
+def get_booking_details(client=None, booking_details=None):
+
+    if not booking_details:
+        if not client:
+            mobile_number = input("Enter mobile number : ")
+            client = APIClient(mobile_no=mobile_number)
+            refresh_token(client=client)
+
+        booking_details = {"mobile_number": client.mobile}
+
+        retrieved_beneficiaries = client.get_beneficiaries()
+
+        beneficiaries = []
+
+        if not retrieved_beneficiaries:
+            print("No beneficiary is registered in the CoWIN site. Kindly register the beneficiaries directly through "
+                  "the CoWIN site and run cowin4all.")
             return
 
-        selected_beneficiaries = beneficiaries
+        print("\nCollecting initial details ... !!\n")
+        for b in retrieved_beneficiaries:
+            age = get_possible_age(b["birth_year"])
+            dose = None
+            vaccine = None
+            booking_age_limit = None
 
-        if len(beneficiaries) != 1:
-            selected_beneficiaries = select_beneficiaries(beneficiaries)
+            if age in minimum_age_limits:
+                # This is required, since age is calculated only based on the year that is provided from CoWIn.
+                # Hence it is not possible to determine the exact age if it falls in the border range of
+                # both categories. Hence the below ask.
+                age = input("Please type the actual age of beneficiary '{}' : ".format(b["name"]))
 
-        booking_details["beneficiaries"] = selected_beneficiaries
+            if age >= 45:
+                booking_age_limit = 45
+            elif 18 <= age <= 44:
+                booking_age_limit = 18
+            else:
+                print("Beneficiary '{}' is not eligible to be vaccinated as on date. Skipping the beneficiary."
+                      "".format(b["name"]))
+                continue
 
-        if selected_beneficiaries[0]["awaited_dose"] == 2:
-            booking_details["preferred_vaccine_types"] = selected_beneficiaries[0]["vaccine"]
+            if b["dose1_date"] and b["dose2_date"]:
+                vaccine = b["vaccine"].lower().strip()
+                dose = "completed"
+            elif not b["dose1_date"]:
+                vaccine = None
+                dose = 1
+            else:
+                vaccine = b["vaccine"].lower().strip()
+                dose = 2
+
+            if dose != "completed":
+                beneficiaries.append({"id": b["beneficiary_reference_id"],
+                                      "name": b["name"],
+                                      "age": age,
+                                      "booking_age_limit": booking_age_limit,
+                                      "awaited_dose": dose,
+                                      "vaccine": vaccine})
+            if not beneficiaries:
+                print("All beneficiaries have successfully completed their vaccination. "
+                      "There is nothing further to be done !! ")
+                return
+
+            selected_beneficiaries = beneficiaries
+
+            if len(beneficiaries) != 1:
+                selected_beneficiaries = select_beneficiaries(beneficiaries)
+
+            booking_details["beneficiaries"] = selected_beneficiaries
+
+            if selected_beneficiaries[0]["awaited_dose"] == 2:
+                booking_details["preferred_vaccine_types"] = [selected_beneficiaries[0]["vaccine"]]
+            else:
+                preferred_vaccine_types = select_vaccine()
+                booking_details["preferred_vaccine_types"] = preferred_vaccine_types
+
+        payment_type = select_payment_type()
+        booking_details["payment_types"] = payment_type
+        state_ids = [s["state_id"] for s in select_state(client=client)]
+        districts = select_district(client=client, state_ids=state_ids)
+        booking_details["district_ids"] = districts
+        booking_details["pin_codes"] = select_pin_code()
+        dates = select_dates()
+        booking_details["dates"] = dates
+
+        booking_mode = select_booking_mode()
+        booking_details["booking_mode"] = booking_mode
+
+    confirmation = confirm_booking_details(booking_details=booking_details)
+    if confirmation == "n":
+        response = select_yes_or_no(message="Do you want to re-enter the booking details ?")
+        if response == "n":
+            print("Sure !! Exiting !! ")
+            return {}
         else:
-            preferred_vaccine_types = select_vaccine()
-            booking_details["preferred_vaccine_types"] = preferred_vaccine_types
-
-    payment_type = select_payment_type()
-    booking_details["payment_type"] = payment_type
-    state_ids = [s["state_id"] for s in select_state(client=client)]
-    districts = select_district(client=client, state_ids=state_ids)
-    booking_details["district_ids"] = districts
-    booking_details["pin_codes"] = select_pin_code()
-    dates = select_dates()
-    booking_details["dates"] = dates
+            booking_details = get_booking_details(client=client)
 
     return booking_details
 

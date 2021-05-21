@@ -131,27 +131,25 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
             raise Exception(response.content.decode("utf-8"))
 
 
-def get_applicable_sessions(client=None, pin_codes=None,
-                            district_ids=None,
-                            dates=None, days_range: int = None,
-                            vaccine_type: (list, str) = None,
-                            payment_type: str = None, age: int = None, dose: int = None):
+def get_applicable_sessions(client=None, pin_codes: list = None,
+                            district_ids: list = None,
+                            dates: list = None, days_range: int = None,
+                            vaccine_type: list = None,
+                            payment_type: list = None, age: int = None, dose: int = None):
 
-    if payment_type in ["any", None]:
-        payment_type = payment_types
-    elif payment_type.lower() not in payment_types:
+    if not payment_type:
         return {}
+    elif isinstance(payment_type, list) and set(payment_types).intersection(set(payment_type)):
+        pass  # Nothing to do
     else:
-        payment_type = [payment_type]
+        payment_type = payment_types
 
-    if vaccine_type in ["any", None]:
-        vaccine_type = vaccine_types
+    if not vaccine_type:
+        return {}
     elif isinstance(vaccine_type, list) and set(vaccine_types).intersection(set(vaccine_type)):
         pass  # Nothing to do
-    elif vaccine_type.lower() not in vaccine_types:
-        return {}
     else:
-        vaccine_type = [vaccine_type]
+        vaccine_type = vaccine_types
 
     if age is [None]:
         age = minimum_age_limits

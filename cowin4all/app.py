@@ -19,8 +19,11 @@ logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def auto_book():
-    global pin_codes, vaccine_type, payment_type, dose, age, dates
+def auto_book(mobile_number=None,
+              pin_codes=None, district_ids=None,
+              vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
+              beneficiary_ids= None, booking_mode=None
+              ):
     api_service = get_api_service_worker()
 
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=True,
@@ -33,7 +36,7 @@ def auto_book():
                 client.get_beneficiaries()
                 centres = get_applicable_sessions(client=client, district_ids=district_ids,
                                                   vaccine_type=vaccine_type,
-                                                  payment_type=payment_type, dose=dose, age=age, dates=dates)
+                                                  payment_type=payment_type, dose=dose, age=age_limit, dates=dates)
                 temp_centres = {}
                 for centre in centres:
                     if centres[centre]["pin_code"] in pin_codes:
@@ -45,9 +48,14 @@ def auto_book():
                     for centre in centres:
                         for session in centres[centre]["sessions"]:
                             if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
-                                logger.info("Available slots for dose {} : {} is less than the number of beneficiary !!"
-                                             "".format(dose, session["available_capacity_dose{}".format(dose)]))
-                                continue
+                                if booking_mode == "first_available":
+                                    pass #FIXME logic for booking remaining
+                                else:
+                                    logger.info("Available slots for dose {} : {} is less than the number of "
+                                                "beneficiary !!".format(dose,
+                                                                        session["available_capacity_dose{}"
+                                                                                "".format(dose)]))
+                                    continue
                             booking_alert()
                             # Most latest slot
                             slot = session["slots"][-1]
@@ -76,35 +84,61 @@ def auto_book():
             time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 
 
-####### BEFECIARY BOOKING DETAILS #######
-
-mobile_number = 0000000000  # Mobile Number of the user
-beneficiary_ids = [0000000000, 1111111111]  # Get the beneficiary Id from client.get_beneficiary()
-age = 18   # Example values: 18 / 45
-dose = 1   # Example values: 1 /  2
-pin_codes = [600000111]  # List of pin codes where you would want to book for a slot if available
-district_ids = [571]  # District Id of the district where the above pin codes are present
-dates = ["19-05-2021", "20-05-2021", "21-05-2021"]  # List of dates when you would want to book for a slot
-vaccine_type = ["covishield", "sputnik v"]  # Example values : "any" / "covaxin" / ["covaxin", "covisheield"]
-payment_type = "any"  # Example values: "any" / "paid" / "free"
-
-if __name__ == "__main__":
+def confirm_and_save_booking_details():
     booking_details = None
     if os.path.exists(BOOKING_INFORMATION_FILE):
         with open(BOOKING_INFORMATION_FILE, "r") as f:
-            j = f.read()
+            js = f.read()
         try:
-            booking_details = json.loads(j)
-        except Exception as e:
+            booking_details = json.loads(js)
+            if not booking_details:
+                print(js)
+                os.remove(BOOKING_INFORMATION_FILE)
+            else:
+                print("Previous booking information file has been identified !!")
+        except Exception:
             print("Booking information file at {} is corrupted. Removing it. Please re-enter the details !!"
                   "".format(BOOKING_INFORMATION_FILE))
             os.remove(BOOKING_INFORMATION_FILE)
-        if not booking_details:
-            os.remove(BOOKING_INFORMATION_FILE)
-        else:
-            print("Previous booking information file has been identified !!")
 
     booking_details = get_booking_details(booking_details=booking_details)
 
     with open(BOOKING_INFORMATION_FILE, 'w') as f:
         f.write(json.dumps(booking_details))
+
+    return
+
+
+def read_booking_info():
+    booking_info = dict()
+    if os.path.exists(BOOKING_INFORMATION_FILE):
+        with open(BOOKING_INFORMATION_FILE, "r") as f:
+            js = f.read()
+        try:
+            booking_details = json.loads(js)
+            booking_info["mobile_number"] = booking_details["mobile_number"]
+            booking_info["beneficiary_ids"] = [b["id"] for b in booking_details["beneficiaries"]]
+            booking_info["age_limit"] = booking_details["beneficiaries"][0]["booking_age_limit"]
+            booking_info["dose"] = booking_details["beneficiaries"][0]["awaited_dose"]
+            booking_info["pin_codes"] = booking_details["pin_codes"]
+            booking_info["district_ids"] = booking_details["district_ids"]
+            booking_info["dates"] = booking_details["dates"]
+            booking_info["vaccine_type"] = booking_details["preferred_vaccine_types"]
+            booking_info["payment_type"] = booking_details["payment_types"]
+            booking_info["booking_mode"] = booking_details["booking_mode"]
+
+        except Exception as e:
+            print(e)
+            print("Booking information file at {} is corrupted. Removing it. Please re-enter the details !!"
+                  "".format(BOOKING_INFORMATION_FILE))
+            os.remove(BOOKING_INFORMATION_FILE)
+    else:
+        print("There is no booking information available !!")
+
+    return booking_info
+
+
+if __name__ == "__main__":
+
+    confirm_and_save_booking_details()
+    read_booking_info()

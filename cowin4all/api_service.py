@@ -33,7 +33,7 @@ def otp_alert(sleep):
 
     if not otp_alert_running:
         otp_alert_running = True
-        alert = Thread(target=monitor_for_incoming_otp_and_alert, args=sleep, daemon=True)
+        alert = Thread(target=monitor_for_incoming_otp_and_alert, args=[sleep, ], daemon=True)
         alert.start()
     else:
         return

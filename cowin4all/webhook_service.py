@@ -61,7 +61,7 @@ async def put_otp(request: Request):
         event_waiter.set()
 
 
-class HelperService(uvicorn.Server):
+class WebhookService(uvicorn.Server):
 
     def install_signal_handlers(self):
         pass
@@ -79,11 +79,11 @@ class HelperService(uvicorn.Server):
             thread.join()
 
 
-def get_api_service_worker():
+def get_webhook_service_worker():
     global app
     config = uvicorn.Config(app, host="0.0.0.0", port=COWIN4ALL_SERVICE_PORT,
                             log_level="info",
                             debug=True)
 
-    helper_service = HelperService(config=config)
-    return helper_service.running
+    webhook_service = WebhookService(config=config)
+    return webhook_service.running

@@ -7,7 +7,7 @@ import sys
 
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually, refresh_token
-from api_service import get_api_service_worker, get_otp_from_webhook
+from webhook_service import get_webhook_service_worker, get_otp_from_webhook
 from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE
 from utils import booking_alert, get_booking_details, get_timestamp
 
@@ -25,7 +25,7 @@ def auto_book(mobile_number=None,
               vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
               beneficiary_ids= None, booking_mode=None
               ):
-    api_service = get_api_service_worker()
+    api_service = get_webhook_service_worker()
 
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=True,
                        auto_refresh_retries_count=AUTO_TOKEN_REFRESH_ATTEMPTS)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == "test":
         print("Testing SMSSync integration :")
         mob = read_booking_info()["mobile_number"]
-        service = get_api_service_worker()
+        service = get_webhook_service_worker()
         with service():
             client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=False)
             while True:

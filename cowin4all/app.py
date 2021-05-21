@@ -3,15 +3,18 @@ import logging
 import random
 import json
 import os
+import sys
 
 from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually
+from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually, refresh_token
 from api_service import get_api_service_worker, get_otp_from_webhook
 from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE
 from utils import booking_alert, get_booking_details, get_timestamp
 
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
+
+
 logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
@@ -182,6 +185,23 @@ def read_booking_info():
 
 if __name__ == "__main__":
 
-    confirm_and_save_booking_details()
-    booking_info = read_booking_info()
-    auto_book(**booking_info)
+    if len(sys.argv) < 2:
+        confirm_and_save_booking_details()
+        booking_info = read_booking_info()
+        auto_book(**booking_info)
+
+    elif sys.argv[1] == "test":
+        print("Testing SMSSync integration :")
+        mob = read_booking_info()["mobile_number"]
+        service = get_api_service_worker()
+        with service():
+            client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=False)
+            while True:
+                try:
+                    refresh_token(client=client)
+                    print("Integration working fine !! Exiting ..")
+                    break
+                except Exception as e:
+                    pass
+
+                time.sleep(20)

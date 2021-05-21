@@ -45,6 +45,10 @@ def display_table(dict_list, exclude_keys=None, default_attribute_name=None):
     print("\n", tabulate.tabulate(rows, header, tablefmt="grid"))
 
 
+def get_timestamp():
+    return str(datetime.now().timestamp())
+
+
 def get_possible_age(year):
     return datetime.now().year - int(year)
 

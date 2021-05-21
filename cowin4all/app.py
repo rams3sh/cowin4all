@@ -4,13 +4,11 @@ import random
 import json
 import os
 
-
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually
 from api_service import get_api_service_worker, get_otp_from_webhook
-from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS, CONFIRMATION_PDF_PREFIX, \
-    BOOKING_INFORMATION_FILE
-from utils import booking_alert, get_booking_details
+from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE
+from utils import booking_alert, get_booking_details, get_timestamp
 
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -28,6 +26,38 @@ def auto_book(mobile_number=None,
 
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=True,
                        auto_refresh_retries_count=AUTO_TOKEN_REFRESH_ATTEMPTS)
+
+    def schedule_appointment(slots=None,
+                             client=None,
+                             beneficiaries=None,
+                             dose_number=None,
+                             center_id=None,
+                             session_id=None):
+        booking_alert()
+        # Most latest slot
+        slot = slots[-1]
+        c = client.get_captcha()
+        captcha = get_captcha_input_manually(captcha=c, client=client)
+        try:
+            app_id = client.schedule_booking(beneficiaries=beneficiaries,
+                                             session_id=session_id,
+                                             captcha=captcha,
+                                             dose_number=dose_number,
+                                             center_id=center_id,
+                                             slot=slot)
+        except Exception:
+            app_id = None
+
+        if not app_id:
+            return
+
+        path = client.download_confirmation(appointment_id=appointment_id,
+                                            destination_file_path=
+                                            get_timestamp() + "_confirmation.pdf")
+        logger.info("Successfully Booked for {} beneficiaries "
+                    "!!  Confirmation form is available at {}!!".format(len(beneficiary_ids), path))
+
+        return appointment_id
 
     with api_service():
         while True:
@@ -49,38 +79,50 @@ def auto_book(mobile_number=None,
                         for session in centres[centre]["sessions"]:
                             if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
                                 if booking_mode == "first_available":
-                                    pass #FIXME logic for booking remaining
+                                    appointment_id = schedule_appointment(
+                                        slots=session["slots"], client=client, dose_number=dose, center_id=centre,
+                                        session_id=session["session_id"],
+                                        beneficiaries=
+                                        beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]])
+                                    if not appointment_id:
+                                        continue
+                                    else:
+                                        # Removing the ones for whom slot is booked already
+                                        booked_beneficiaries = \
+                                            beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]]
+                                        beneficiary_ids = [b for b in beneficiary_ids if b not in booked_beneficiaries]
+
+                                        # FIXME: to think on whether to update the booking info file once
+                                        #  slot is booked
+                                        if not beneficiary_ids:
+                                            break
+
                                 else:
                                     logger.info("Available slots for dose {} : {} is less than the number of "
                                                 "beneficiary !!".format(dose,
                                                                         session["available_capacity_dose{}"
                                                                                 "".format(dose)]))
                                     continue
-                            booking_alert()
-                            # Most latest slot
-                            slot = session["slots"][-1]
-                            c = client.get_captcha()
-                            captcha = get_captcha_input_manually(captcha=c, client=client)
-                            appointment_id = None
-                            try:
-                                appointment_id = client.schedule_booking(beneficiaries=beneficiary_ids,
-                                                                         session_id=session["session_id"],
-                                                                         captcha=captcha,
-                                                                         dose_number=dose,
-                                                                         center_id=centre,
-                                                                         slot=slot)
-                            except Exception as e:
-                                appointment_id = None
-                            if not appointment_id:
-                                continue
-                            path = client.download_confirmation(appointment_id=appointment_id,
-                                                                destination_file_path=
-                                                                CONFIRMATION_PDF_PREFIX + "_confirmation.pdf")
-                            logger.info("Successfully Booked!!  Confirmation form is available at {}!!".format(path))
-                            return
+
+                            appointment_id = schedule_appointment(
+                                slots=session["slots"], client=client, dose_number=dose, center_id=centre,
+                                session_id=session["session_id"],
+                                beneficiaries=beneficiary_ids)
+                            # FIXME: to think on whether to update the booking info file once
+                            #  slot is booked
+                            beneficiary_ids = []
+                            break
+
+                        if not beneficiary_ids:
+                            break
+
+                    if not beneficiary_ids:
+                        break
+
             except Exception as e:
                 logger.error(e)
                 client.auto_refresh_token_retries_attempted = 0
+
             time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 
 
@@ -129,7 +171,7 @@ def read_booking_info():
 
         except Exception as e:
             print(e)
-            print("Booking information file at {} is corrupted. Removing it. Please re-enter the details !!"
+            print("Booking information file at {} is corrupted. Removing it. Please re-enter the details again !!"
                   "".format(BOOKING_INFORMATION_FILE))
             os.remove(BOOKING_INFORMATION_FILE)
     else:
@@ -141,4 +183,5 @@ def read_booking_info():
 if __name__ == "__main__":
 
     confirm_and_save_booking_details()
-    read_booking_info()
+    booking_info = read_booking_info()
+    auto_book(**booking_info)

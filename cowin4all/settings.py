@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 
 COWIN4ALL_APP_ROOT_DIRECTORY = os.path.dirname(__file__)
@@ -17,5 +16,3 @@ OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_OTP.mp3")
 BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available for all selected beneficiaries"},
                  {"mode": "first_available",
                   "remarks": "Book for beneficiaries based on WHEREVER slot is available first. "}]
-
-CONFIRMATION_PDF_PREFIX = str(datetime.now().timestamp())

@@ -7,6 +7,7 @@ POLL_TIME_RANGE = (15.0, 20.0)
 LOG_FORMAT = "%(asctime)s — [Module Name: %(name)s] — [PID: %(process)d] — [Thread : %(threadName)s] —  %(levelname)s" \
              " — [Method and Line  No: %(funcName)s:%(lineno)d] — %(message)s"
 
+BOOKING_INFORMATION_FILE = "booking_information.json"
 AUTO_TOKEN_REFRESH_ATTEMPTS = 3
 AUDIO_FILE_PLAYING_COMMAND = "vlc --intf dummy --play-and-exit {audio_file_path}"
 
@@ -18,4 +19,3 @@ BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available fo
                   "remarks": "Book for beneficiaries based on WHEREVER slot is available first. "}]
 
 CONFIRMATION_PDF_PREFIX = str(datetime.now().timestamp())
-

@@ -1,12 +1,15 @@
 import time
 import logging
 import random
+import json
+import os
 
 
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually
 from api_service import get_api_service_worker, get_otp_from_webhook
-from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS, CONFIRMATION_PDF_PREFIX
+from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS, CONFIRMATION_PDF_PREFIX, \
+    BOOKING_INFORMATION_FILE
 from utils import booking_alert, get_booking_details
 
 logging.getLogger('asyncio').setLevel(logging.WARNING)
@@ -86,5 +89,22 @@ vaccine_type = ["covishield", "sputnik v"]  # Example values : "any" / "covaxin"
 payment_type = "any"  # Example values: "any" / "paid" / "free"
 
 if __name__ == "__main__":
-    #auto_book()
-    get_booking_details()
+    booking_details = None
+    if os.path.exists(BOOKING_INFORMATION_FILE):
+        with open(BOOKING_INFORMATION_FILE, "r") as f:
+            j = f.read()
+        try:
+            booking_details = json.loads(j)
+        except Exception as e:
+            print("Booking information file at {} is corrupted. Removing it. Please re-enter the details !!"
+                  "".format(BOOKING_INFORMATION_FILE))
+            os.remove(BOOKING_INFORMATION_FILE)
+        if not booking_details:
+            os.remove(BOOKING_INFORMATION_FILE)
+        else:
+            print("Previous booking information file has been identified !!")
+
+    booking_details = get_booking_details(booking_details=booking_details)
+
+    with open(BOOKING_INFORMATION_FILE, 'w') as f:
+        f.write(json.dumps(booking_details))

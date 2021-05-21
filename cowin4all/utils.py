@@ -1,13 +1,16 @@
 from threading import Thread
 from datetime import datetime, timedelta
 from copy import deepcopy
+from jsonschema.exceptions import ValidationError
 import os
+import re
 import tabulate
+import jsonschema
 
 from settings import AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH, BOOKING_MODES
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import refresh_token
-from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types
+from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
 
 
 def play_sound(file_path):
@@ -20,6 +23,7 @@ def booking_alert():
     siren.start()
 
 
+# Take from bombardier-gif's code base nad modified it for multiple data type support
 def display_table(dict_list, exclude_keys=None, default_attribute_name=None):
     temp_dict = deepcopy(dict_list)
 
@@ -140,11 +144,12 @@ def select_pin_code():
 
     if selected_pin_codes:
         try:
-            selected_pin_codes = set([int(p.strip()) for p in selected_pin_codes.split(",")])
+            selected_pin_codes = list(set([int(p.strip()) for p in selected_pin_codes.split(",")]))
         except (IndexError, ValueError):
             print("Invalid pin code(s) provided. Kindly re-enter the values !!")
             pin_codes = select_pin_code()
-
+    else:
+        selected_pin_codes = []
     return selected_pin_codes
 
 
@@ -226,21 +231,22 @@ def confirm_booking_details(booking_details):
     display_table(booking_details["beneficiaries"])
 
     print("\nList of vaccine preference :- ", "\n")
-    display_table(booking_details["preferred_vaccine_types"])
+    display_table(booking_details["preferred_vaccine_types"], default_attribute_name="Vaccine Preference")
 
     print("\nList of district preference :- ", "\n")
     display_table(booking_details["district_ids"], exclude_keys="district_id")
 
-    print("\nList of pin code preference. "
-          "\n\n PLEASE ENSURE THAT YOU ARE CONFIDENT ABOUT EXISTENCE OF THESE PINCODES. COWIN4ALL CANNOT VERIFY THESE "
-          "!!  ", "\n")
-    display_table(booking_details["pin_codes"])
+    if booking_details["pin_codes"]:
+        print("\nList of pin code preference. "
+              "\n\n PLEASE ENSURE THAT YOU ARE CONFIDENT ABOUT EXISTENCE OF THESE PINCODES. COWIN4ALL CANNOT VERIFY "
+              "THESE !!  ", "\n")
+        display_table(booking_details["pin_codes"])
 
     print("\nList of date preference :- ", "\n")
-    display_table(booking_details["dates"])
+    display_table(booking_details["dates"], default_attribute_name="Preferred Dates")
 
     print("\nList of payment preference :- ", "\n")
-    display_table(booking_details["payment_types"])
+    display_table(booking_details["payment_types"], default_attribute_name="Preferred Payment")
 
     print("\nBooking mode preference :- ", "\n")
     display_table([booking_details["booking_mode"]])
@@ -259,13 +265,178 @@ def select_yes_or_no(message=None):
     except (IndexError, ValueError):
         print("Invalid value provided. Kindly re-enter the values !!")
         confirmation = select_yes_or_no(message=message)
+    return confirmation
+
+
+def get_mobile_no():
+    mobile = input("Enter mobile number : ")
+    try:
+        if not re.fullmatch("[0-9]{10}", mobile):
+            raise ValueError()
+    except Exception as e:
+        print("Invalid mobile number provided. Kindly re-enter the number !!")
+        mobile = get_mobile_no()
+    return mobile
+
+
+def validate_booking_details(booking_details=None):
+    schema = {
+        "definitions": {
+            "BookingDetails": {
+                "type": "object",
+                "additionalProperties": False,
+                "minProperties": 1,
+                "properties": {
+                    "mobile_number": {
+                        "type": "string",
+                        "pattern": "^[0-9]{10}$"
+                    },
+                    "beneficiaries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/Beneficiary"
+                        }
+                    },
+                    "preferred_vaccine_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": vaccine_types
+                        },
+                        "minItems": 1,
+                        "uniqueItems": True
+                    },
+                    "payment_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": payment_types
+                        },
+                        "minItems": 1,
+                        "uniqueItems": True
+                    },
+                    "district_ids": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/DistrictID"
+                        }
+                    },
+                    "pin_codes": {
+                        "type": "array", "items": {"type": "integer"}
+                    },
+                    "dates": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[0-9]{2}\\-[0-9]{2}\\-2021$"
+                        },
+                        "minItems": 1,
+                        "uniqueItems": True
+
+                    },
+                    "booking_mode": {
+                        "$ref": "#/definitions/BookingMode"
+                    }
+                },
+                "required": [
+                    "beneficiaries",
+                    "booking_mode",
+                    "dates",
+                    "district_ids",
+                    "mobile_number",
+                    "payment_types",
+                    "pin_codes",
+                    "preferred_vaccine_types"
+                ],
+                "title": "BookingDetails"
+            },
+            "Beneficiary": {
+                "type": "object",
+                "additionalProperties": False,
+                "minProperties": 1,
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "age": {
+                        "type": "integer",
+                        "minimum": min(minimum_age_limits)
+                    },
+                    "booking_age_limit": {
+                        "type": "integer",
+                        "enum": minimum_age_limits
+                    },
+                    "awaited_dose": {
+                        "type": "integer",
+                        "enum": doses
+                    },
+                    "vaccine": {
+                        "type": "string",
+                        "enum": vaccine_types
+                    }
+                },
+                "required": [
+                    "age",
+                    "awaited_dose",
+                    "booking_age_limit",
+                    "id",
+                    "name",
+                    "vaccine"
+                ],
+                "title": "Beneficiary"
+            },
+            "BookingMode": {
+                "type": "object",
+                "additionalProperties": False,
+                "minProperties": 1,
+                "properties": {
+                    "mode": {
+                        "type": "string",
+                        "enum": [mode["mode"] for mode in BOOKING_MODES]
+                    },
+                    "remarks": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "mode",
+                    "remarks"
+                ],
+                "title": "BookingMode"
+            },
+            "DistrictID": {
+                "type": "object",
+                "additionalProperties": False,
+                "minProperties": 1,
+                "properties": {
+                    "district_id": {
+                        "type": "integer"
+                    },
+                    "district_name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "district_id",
+                    "district_name"
+                ],
+                "title": "DistrictID"
+            }
+        },
+        "$ref": "#/definitions/BookingDetails"
+    }
+
+    jsonschema.validate(schema=schema, instance=booking_details)
 
 
 def get_booking_details(client=None, booking_details=None):
 
     if not booking_details:
         if not client:
-            mobile_number = input("Enter mobile number : ")
+            mobile_number = get_mobile_no()
             client = APIClient(mobile_no=mobile_number)
             refresh_token(client=client)
 
@@ -349,8 +520,18 @@ def get_booking_details(client=None, booking_details=None):
         booking_mode = select_booking_mode()
         booking_details["booking_mode"] = booking_mode
 
-    confirmation = confirm_booking_details(booking_details=booking_details)
-    if confirmation == "n":
+    try:
+        validate_booking_details(booking_details=booking_details)
+        confirmation = confirm_booking_details(booking_details=booking_details)
+        if confirmation == "n":
+            response = select_yes_or_no(message="Do you want to re-enter the booking details ?")
+            if response == "n":
+                print("Sure !! Exiting !! ")
+                return {}
+            else:
+                booking_details = get_booking_details(client=client)
+    except ValidationError as e:
+        print("There was some error in the previously generated booking information. Error : {}".format(e))
         response = select_yes_or_no(message="Do you want to re-enter the booking details ?")
         if response == "n":
             print("Sure !! Exiting !! ")

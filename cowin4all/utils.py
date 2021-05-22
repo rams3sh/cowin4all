@@ -23,7 +23,7 @@ def booking_alert():
     siren.start()
 
 
-# Take from bombardier-gif's code base nad modified it for multiple data type support
+# Take from bombardier-gif's code base and modified it for multiple data type support
 def display_table(dict_list, exclude_keys=None, default_attribute_name=None):
     temp_dict = deepcopy(dict_list)
 
@@ -544,5 +544,3 @@ def get_booking_details(client=None, booking_details=None):
             booking_details = get_booking_details(client=client)
 
     return booking_details
-
-

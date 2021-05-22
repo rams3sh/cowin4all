@@ -13,6 +13,7 @@ AUDIO_FILE_PLAYING_COMMAND = "vlc --intf dummy --play-and-exit {audio_file_path}
 BOOKING_ALERT_AUDIO_PATH = os.path.join("audio", "Siren-SoundBible.com-1094437108.mp3")
 OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_OTP.mp3")
 
+
 BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available for all selected beneficiaries"},
                  {"mode": "first_available",
                   "remarks": "Book for beneficiaries based on WHEREVER slot is available first. "}]

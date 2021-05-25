@@ -494,12 +494,13 @@ def get_booking_details(client=None, booking_details=None):
                                       "booking_age_limit": booking_age_limit,
                                       "awaited_dose": dose,
                                       "vaccine": vaccine})
-            if not beneficiaries:
-                print("All beneficiaries have successfully completed their vaccination. "
-                      "There is nothing further to be done !! ")
-                return
 
-            selected_beneficiaries = beneficiaries
+        if not beneficiaries:
+            print("All beneficiaries have successfully completed their vaccination. "
+                  "There is nothing further to be done !! ")
+            return
+
+        selected_beneficiaries = beneficiaries
 
         # if there is only one beneficiary selection of beneficiary is required
         if len(beneficiaries) != 1:

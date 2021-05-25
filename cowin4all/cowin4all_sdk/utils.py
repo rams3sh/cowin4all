@@ -15,7 +15,7 @@ from cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_
     default_request_timeout_seconds, \
     default_connection_error_retry_attempts, default_blocked_request_retry_backoff_factor_seconds, \
     delay_refresh_token_retry_delay_seconds, default_user_agent, \
-    vaccine_types, doses, payment_types, minimum_age_limits
+    vaccine_types, doses, payment_types, minimum_age_limits, base_url
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,9 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
     headers = dict()
     base_headers = {'User-Agent': default_user_agent,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'}
+                    'Origin': base_url.rstrip("/"),
+                    'Referer': base_url}
+
     headers.update(base_headers)
 
     if additional_headers:

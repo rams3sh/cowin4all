@@ -378,8 +378,15 @@ def validate_booking_details(booking_details=None):
                         "enum": doses
                     },
                     "vaccine": {
-                        "type": "string",
-                        "enum": vaccine_types
+                        "oneOf": [
+                                {
+                                    "type": ["string"],
+                                    "enum": vaccine_types
+                                },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     }
                 },
                 "required": [

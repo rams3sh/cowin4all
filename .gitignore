@@ -1,5 +1,7 @@
-# Local test folder
+# Local testing files / folders
 others/
+*booking_information.json*
+*test*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

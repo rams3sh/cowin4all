@@ -118,7 +118,7 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
                 except Exception as e:
                     time.sleep(delay_refresh_token_retry_delay_seconds)
 
-        elif response.status_code in [403]:
+        elif response.status_code in [403, 429]:
             if client.retry_blocked_request:
                 if attempted_connection_error_retries < connection_error_retries:
                     logger.error("Request blocked !! Retrying request ..")
@@ -199,7 +199,6 @@ def get_applicable_sessions(client=None, pin_codes: list = None,
                         centres.append(centre)
 
     filtered_sessions = dict()
-
     if centres:
 
         for centre in centres:

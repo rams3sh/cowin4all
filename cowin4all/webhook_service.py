@@ -54,7 +54,7 @@ async def put_otp(request: Request):
     global otp, event_waiter
     body = await request.body()
     body = body.decode("utf-8")
-    logger.info("Received SMS: " + str(body))
+    logger.info("Received SMS: " + body)
     match = re.findall("(?<=CoWIN is )[0-9]{6}", body)
     if match:
         otp = match[0]

@@ -10,8 +10,8 @@ BOOKING_INFORMATION_FILE = "booking_information.json"
 AUTO_TOKEN_REFRESH_ATTEMPTS = 3
 AUDIO_FILE_PLAYING_COMMAND = "vlc --intf dummy --play-and-exit {audio_file_path}"
 
-BOOKING_ALERT_AUDIO_PATH = os.path.join("audio", "Siren-SoundBible.com-1094437108.mp3")
-OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_OTP.mp3")
+BOOKING_ALERT_AUDIO_PATH = os.path.join("audio", "booking_siren_alert.mp3")
+OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_otp.mp3")
 
 
 BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available for all selected beneficiaries"},

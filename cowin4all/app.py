@@ -14,21 +14,20 @@ from utils import booking_alert, get_booking_details, get_timestamp
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
-
 logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
-
 logger = logging.getLogger(__name__)
 
 
 def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
               vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
-              beneficiary_ids= None, booking_mode=None
+              beneficiary_ids= None, booking_mode=None, otp_retrieval_method=None,
               ):
-    api_service = get_webhook_service_worker()
 
-    client = APIClient(mobile_no=mobile_number, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=True,
+    client = APIClient(mobile_no=mobile_number, otp_retrieval_method=otp_retrieval_method, auto_refresh_token=True,
                        auto_refresh_retries_count=AUTO_TOKEN_REFRESH_ATTEMPTS)
+
+    district_ids = [d['district_id'] for d in district_ids]
 
     def schedule_appointment(slots=None,
                              client=None,
@@ -37,7 +36,6 @@ def auto_book(mobile_number=None,
                              center_id=None,
                              session_id=None):
         booking_alert()
-        # Most latest slot
         slot = slots[-1]
         c = client.get_captcha()
         captcha = get_captcha_input_manually(captcha=c, client=client)
@@ -62,71 +60,81 @@ def auto_book(mobile_number=None,
 
         return appointment_id
 
-    with api_service():
-        while True:
-            try:
-                logger.info("Polling ...")
-                client.get_beneficiaries()
-                centres = get_applicable_sessions(client=client, district_ids=district_ids,
-                                                  vaccine_type=vaccine_type,
-                                                  payment_type=payment_type, dose=dose, age=age_limit, dates=dates)
-                temp_centres = {}
-                for centre in centres:
+    while True:
+        try:
+            logger.info("Polling ...")
+            client.get_beneficiaries()
+            centres = get_applicable_sessions(client=client, district_ids=district_ids,
+                                              vaccine_type=vaccine_type,
+                                              payment_type=payment_type, dose=dose, age=age_limit, dates=dates)
+            temp_centres = {}
+
+            for centre in centres:
+                if pin_codes:
                     if centres[centre]["pin_code"] in pin_codes:
                         temp_centres.update({centre: centres[centre]})
-                centres = temp_centres
-                logger.info("Available centres:{}".format(centres))
-                if centres:
-                    logger.info("Some centres found !!")
-                    for centre in centres:
-                        for session in centres[centre]["sessions"]:
-                            if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
-                                if booking_mode == "first_available":
-                                    appointment_id = schedule_appointment(
-                                        slots=session["slots"], client=client, dose_number=dose, center_id=centre,
-                                        session_id=session["session_id"],
-                                        beneficiaries=
-                                        beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]])
-                                    if not appointment_id:
-                                        continue
-                                    else:
-                                        # Removing the ones for whom slot is booked already
-                                        booked_beneficiaries = \
-                                            beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]]
-                                        beneficiary_ids = [b for b in beneficiary_ids if b not in booked_beneficiaries]
+                else:
+                    temp_centres.update({centre: centres[centre]})
 
-                                        # FIXME: to think on whether to update the booking info file once
-                                        #  slot is booked
-                                        if not beneficiary_ids:
-                                            break
-
-                                else:
-                                    logger.info("Available slots for dose {} : {} is less than the number of "
-                                                "beneficiary !!".format(dose,
-                                                                        session["available_capacity_dose{}"
-                                                                                "".format(dose)]))
+            centres = temp_centres
+            logger.info("Available centres:{}".format(centres))
+            if centres:
+                logger.info("Some centres found !!")
+                for centre in centres:
+                    for session in centres[centre]["sessions"]:
+                        if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
+                            if booking_mode == "first_available":
+                                appointment_id = schedule_appointment(
+                                    slots=session["slots"], client=client, dose_number=dose, center_id=centre,
+                                    session_id=session["session_id"],
+                                    beneficiaries=
+                                    beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]])
+                                if not appointment_id:
                                     continue
+                                else:
+                                    # Removing the ones for whom slot is booked already
+                                    booked_beneficiaries = \
+                                        beneficiary_ids[0:session["available_capacity_dose{}".format(dose)]]
+                                    beneficiary_ids = [b for b in beneficiary_ids if b not in booked_beneficiaries]
 
-                            appointment_id = schedule_appointment(
-                                slots=session["slots"], client=client, dose_number=dose, center_id=centre,
-                                session_id=session["session_id"],
-                                beneficiaries=beneficiary_ids)
-                            # FIXME: to think on whether to update the booking info file once
-                            #  slot is booked
-                            beneficiary_ids = []
-                            break
+                                    # FIXME: to think on whether to update the booking info file once
+                                    #  slot is booked
+                                    if not beneficiary_ids:
+                                        break
+                                    else:
+                                        continue
 
-                        if not beneficiary_ids:
-                            break
+                            else:
+                                logger.info("Available slots for dose {} : {} is less than the number of "
+                                            "beneficiary !!".format(dose,
+                                                                    session["available_capacity_dose{}"
+                                                                            "".format(dose)]))
+                                continue
+
+                        appointment_id = schedule_appointment(
+                            slots=session["slots"], client=client, dose_number=dose, center_id=centre,
+                            session_id=session["session_id"],
+                            beneficiaries=beneficiary_ids)
+
+                        if not appointment_id:
+                            continue
+
+                        # FIXME: to think on whether to update the booking info file once
+                        #  slot is booked
+                        beneficiary_ids = []
+                        break
 
                     if not beneficiary_ids:
                         break
 
-            except Exception as e:
-                logger.error(e)
-                client.auto_refresh_token_retries_attempted = 0
+                if not beneficiary_ids:
+                    break
 
-            time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
+        except Exception as e:
+            logger.error(e)
+            client.auto_refresh_token_retries_attempted = 0
+
+        time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 
 
 def confirm_and_save_booking_details():
@@ -188,7 +196,9 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         confirm_and_save_booking_details()
         booking_info = read_booking_info()
-        auto_book(**booking_info)
+        api_service = get_webhook_service_worker()
+        with api_service():
+            auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
 
     elif sys.argv[1] == "test":
         print("Testing SMSSync integration :")

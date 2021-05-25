@@ -59,7 +59,7 @@ def validate_selected_beneficiaries(beneficiaries):
     vaccine = set()
     for b in beneficiaries:
         booking_age_limit.add(b["booking_age_limit"])
-        awaited_dose.add(b["awaited_date"])
+        awaited_dose.add(b["awaited_dose"])
         vaccine.add(b["vaccine"])
 
     if len(booking_age_limit) > 2:
@@ -501,16 +501,17 @@ def get_booking_details(client=None, booking_details=None):
 
             selected_beneficiaries = beneficiaries
 
-            if len(beneficiaries) != 1:
-                selected_beneficiaries = select_beneficiaries(beneficiaries)
+        # if there is only one beneficiary selection of beneficiary is required
+        if len(beneficiaries) != 1:
+            selected_beneficiaries = select_beneficiaries(beneficiaries)
 
-            booking_details["beneficiaries"] = selected_beneficiaries
+        booking_details["beneficiaries"] = selected_beneficiaries
 
-            if selected_beneficiaries[0]["awaited_dose"] == 2:
-                booking_details["preferred_vaccine_types"] = [selected_beneficiaries[0]["vaccine"]]
-            else:
-                preferred_vaccine_types = select_vaccine()
-                booking_details["preferred_vaccine_types"] = preferred_vaccine_types
+        if selected_beneficiaries[0]["awaited_dose"] == 2:
+            booking_details["preferred_vaccine_types"] = [selected_beneficiaries[0]["vaccine"]]
+        else:
+            preferred_vaccine_types = select_vaccine()
+            booking_details["preferred_vaccine_types"] = preferred_vaccine_types
 
         payment_type = select_payment_type()
         booking_details["payment_types"] = payment_type

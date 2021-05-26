@@ -209,7 +209,7 @@ if __name__ == "__main__":
             while True:
                 try:
                     refresh_token(client=client)
-                    print("Integration working fine !! Exiting ..")
+                    print("\n\nIntegration working fine !! Exiting ..")
                     break
                 except Exception as e:
                     pass

@@ -11,10 +11,11 @@ import tempfile
 import datetime
 import time
 
-from cowin4all_app.cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_factor_seconds, default_request_timeout_seconds, \
+from cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_factor_seconds, \
+    default_request_timeout_seconds, \
     default_connection_error_retry_attempts, default_blocked_request_retry_backoff_factor_seconds, \
     delay_refresh_token_retry_delay_seconds, default_user_agent, \
-    vaccine_types, doses, payment_types, minimum_age_limits
+    vaccine_types, doses, payment_types, minimum_age_limits, base_url
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,9 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
     headers = dict()
     base_headers = {'User-Agent': default_user_agent,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'}
+                    'Origin': base_url.rstrip("/"),
+                    'Referer': base_url}
+
     headers.update(base_headers)
 
     if additional_headers:
@@ -115,7 +118,7 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
                 except Exception as e:
                     time.sleep(delay_refresh_token_retry_delay_seconds)
 
-        elif response.status_code in [403]:
+        elif response.status_code in [403, 429]:
             if client.retry_blocked_request:
                 if attempted_connection_error_retries < connection_error_retries:
                     logger.error("Request blocked !! Retrying request ..")
@@ -130,27 +133,25 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
             raise Exception(response.content.decode("utf-8"))
 
 
-def get_applicable_sessions(client=None, pin_codes=None,
-                            district_ids=None,
-                            dates=None, days_range: int = None,
-                            vaccine_type: (list, str) = None,
-                            payment_type: str = None, age: int = None, dose: int = None):
+def get_applicable_sessions(client=None, pin_codes: list = None,
+                            district_ids: list = None,
+                            dates: list = None, days_range: int = None,
+                            vaccine_type: list = None,
+                            payment_type: list = None, age: int = None, dose: int = None):
 
-    if payment_type in ["any", None]:
-        payment_type = payment_types
-    elif payment_type.lower() not in payment_types:
+    if not payment_type:
         return {}
+    elif isinstance(payment_type, list) and set(payment_types).intersection(set(payment_type)):
+        pass  # Nothing to do
     else:
-        payment_type = [payment_type]
+        payment_type = payment_types
 
-    if vaccine_type in ["any", None]:
-        vaccine_type = vaccine_types
+    if not vaccine_type:
+        return {}
     elif isinstance(vaccine_type, list) and set(vaccine_types).intersection(set(vaccine_type)):
         pass  # Nothing to do
-    elif vaccine_type.lower() not in vaccine_types:
-        return {}
     else:
-        vaccine_type = [vaccine_type]
+        vaccine_type = vaccine_types
 
     if age is [None]:
         age = minimum_age_limits
@@ -198,7 +199,6 @@ def get_applicable_sessions(client=None, pin_codes=None,
                         centres.append(centre)
 
     filtered_sessions = dict()
-
     if centres:
 
         for centre in centres:
@@ -272,7 +272,7 @@ def get_captcha_input_manually(captcha=None, client=None, _initial_call=True, al
 
 
 def get_otp_manually(client=None):
-    return input("Enter OTP:")
+    return input("Enter OTP : ")
 
 
 def refresh_token(client=None):

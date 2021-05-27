@@ -27,8 +27,6 @@ def auto_book(mobile_number=None,
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=otp_retrieval_method, auto_refresh_token=True,
                        auto_refresh_retries_count=AUTO_TOKEN_REFRESH_ATTEMPTS)
 
-    district_ids = [d['district_id'] for d in district_ids]
-
     def schedule_appointment(slots=None,
                              client=None,
                              beneficiaries=None,
@@ -63,7 +61,6 @@ def auto_book(mobile_number=None,
     while True:
         try:
             logger.info("Polling ...")
-            print(booking_mode)
             client.get_beneficiaries()
             centres = get_applicable_sessions(client=client, district_ids=district_ids,
                                               vaccine_type=vaccine_type,
@@ -83,7 +80,7 @@ def auto_book(mobile_number=None,
                 for centre in centres:
                     for session in centres[centre]["sessions"]:
                         if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
-                            if booking_mode["mode"] == "first_available":
+                            if booking_mode == "first_available":
                                 appointment_id = schedule_appointment(
                                     slots=session["slots"], client=client, dose_number=dose, center_id=centre,
                                     session_id=session["session_id"],
@@ -174,11 +171,11 @@ def read_booking_info():
             booking_info["age_limit"] = booking_details["beneficiaries"][0]["booking_age_limit"]
             booking_info["dose"] = booking_details["beneficiaries"][0]["awaited_dose"]
             booking_info["pin_codes"] = booking_details["pin_codes"]
-            booking_info["district_ids"] = booking_details["district_ids"]
+            booking_info["district_ids"] = [d['district_id'] for d in booking_details["district_ids"]]
             booking_info["dates"] = booking_details["dates"]
             booking_info["vaccine_type"] = booking_details["preferred_vaccine_types"]
             booking_info["payment_type"] = booking_details["payment_types"]
-            booking_info["booking_mode"] = booking_details["booking_mode"]
+            booking_info["booking_mode"] = booking_details["booking_mode"]["mode"]
 
         except Exception as e:
             print(e)

@@ -1,7 +1,7 @@
-from threading import Thread
 from datetime import datetime, timedelta
 from copy import deepcopy
 from jsonschema.exceptions import ValidationError
+import multiprocessing
 import os
 import re
 import tabulate
@@ -18,9 +18,8 @@ def play_sound(file_path):
 
 
 def booking_alert():
-    siren = Thread(target=play_sound, args=[BOOKING_ALERT_AUDIO_PATH],
-                   daemon=True)
-    siren.start()
+    p = multiprocessing.Process(target=play_sound, args=(BOOKING_ALERT_AUDIO_PATH, ), daemon=True)
+    p.start()
 
 
 # Take from bombardier-gif's code base and modified it for multiple data type support

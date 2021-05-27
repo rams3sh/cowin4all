@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
-from threading import Thread
 import contextlib
 import uvicorn
+import multiprocessing
 import time
 import threading
 import logging
@@ -33,14 +33,14 @@ def otp_alert(sleep):
 
     if not otp_alert_running:
         otp_alert_running = True
-        alert = Thread(target=monitor_for_incoming_otp_and_alert, args=[sleep, ], daemon=True)
-        alert.start()
+        p = multiprocessing.Process(target=monitor_for_incoming_otp_and_alert, args=(sleep,), daemon=True)
+        p.start()
     else:
         return
 
 
 def get_otp_from_webhook(client=None):
-    global otp, event_waiter
+    global otp, event_waiter, otp_alert_running
     logger.info("Waiting for OTP !! ")
     otp_alert(sleep=10)
     event_waiter.wait()

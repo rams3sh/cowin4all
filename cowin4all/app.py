@@ -63,6 +63,7 @@ def auto_book(mobile_number=None,
     while True:
         try:
             logger.info("Polling ...")
+            print(booking_mode)
             client.get_beneficiaries()
             centres = get_applicable_sessions(client=client, district_ids=district_ids,
                                               vaccine_type=vaccine_type,
@@ -75,7 +76,6 @@ def auto_book(mobile_number=None,
                         temp_centres.update({centre: centres[centre]})
                 else:
                     temp_centres.update({centre: centres[centre]})
-
             centres = temp_centres
             logger.info("Available centres:{}".format(centres))
             if centres:
@@ -83,7 +83,7 @@ def auto_book(mobile_number=None,
                 for centre in centres:
                     for session in centres[centre]["sessions"]:
                         if session["available_capacity_dose{}".format(dose)] < len(beneficiary_ids):
-                            if booking_mode == "first_available":
+                            if booking_mode["mode"] == "first_available":
                                 appointment_id = schedule_appointment(
                                     slots=session["slots"], client=client, dose_number=dose, center_id=centre,
                                     session_id=session["session_id"],

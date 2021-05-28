@@ -150,7 +150,7 @@ def select_pin_code():
             selected_pin_codes = list(set([int(p.strip()) for p in selected_pin_codes.split(",")]))
         except (IndexError, ValueError):
             print("Invalid pin code(s) provided. Kindly re-enter the values !!")
-            pin_codes = select_pin_code()
+            selected_pin_codes = select_pin_code()
     else:
         selected_pin_codes = []
     return selected_pin_codes

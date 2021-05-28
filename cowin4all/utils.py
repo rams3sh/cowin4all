@@ -88,7 +88,7 @@ def validate_serial_no(snos=None):
 
 def select_beneficiaries(beneficiaries):
     display_table(beneficiaries)
-    s_nos = input("Enter S.No(s) of the beneficiaries for slot booking (in case of multiple "
+    s_nos = input("Enter S.No(s) of the beneficiaries in order of priority for slot booking (in case of multiple "
                   "beneficiaries use ',' to separate S.No(s) : ")
     try:
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])

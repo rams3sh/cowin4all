@@ -53,8 +53,8 @@ def auto_book(mobile_number=None,
         path = client.download_confirmation(appointment_id=app_id,
                                             destination_file_path=
                                             get_timestamp() + "_confirmation.pdf")
-        logger.info("Successfully Booked for {} beneficiaries "
-                    "!!  Confirmation form is available at {}!!".format(len(beneficiary_ids), path))
+        logger.info("Successfully Booked for {} beneficiary(ies) "
+                    "!!  Confirmation form is available at {}!!".format(len(beneficiaries), path))
 
         return app_id
 

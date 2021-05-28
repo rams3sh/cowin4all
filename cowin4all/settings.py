@@ -2,7 +2,7 @@ import os
 
 COWIN4ALL_APP_ROOT_DIRECTORY = os.path.dirname(__file__)
 COWIN4ALL_SERVICE_PORT = 8081
-POLL_TIME_RANGE = (15.0, 20.0)
+POLL_TIME_RANGE = (5.0, 10.0)
 LOG_FORMAT = "%(asctime)s — [Module Name: %(name)s] — [PID: %(process)d] — [Thread : %(threadName)s] —  %(levelname)s" \
              " — [Method and Line  No: %(funcName)s:%(lineno)d] — %(message)s"
 
@@ -17,3 +17,6 @@ OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_otp.mp3")
 BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available for all selected beneficiaries"},
                  {"mode": "first_available",
                   "remarks": "Book for beneficiaries based on WHEREVER slot is available first. "}]
+
+REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX = ["Your transaction didn't go through. Please try again later",
+                                            "This vaccination center is completely booked for the selected date"]

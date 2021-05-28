@@ -27,7 +27,15 @@ class APIClient:
 
         # Both of the below variables keeps getting refreshed as part of auto refresh token process
         self.taxation_id = None  # Taxation Id received during most recent OTP query.
+
         self.token = None   # Auth token received during most recent OTP validation. This keeps getting refreshed.
+
+        try:
+            with open(".token", "r") as f:
+                token = f.read().strip().replace("\n", "").replace("\r", "")
+            self.token = token
+        except Exception:
+            pass
 
     def get_otp(self):
         payload = {"mobile": self.mobile,
@@ -46,6 +54,9 @@ class APIClient:
         # Hence it has been added as an explicit status code for initiating token refresh.
         self.token = send_request(action="VALIDATE_OTP", payload=payload, client=self,
                                   explicit_token_refresh_status_codes=[400]).json()["token"]
+
+        with open(".token", "w") as f:
+            f.write(self.token)
 
     def get_beneficiaries(self):
         beneficiaries = send_request(action="GET_BENEFICIARIES", client=self).json()["beneficiaries"]

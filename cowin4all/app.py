@@ -1,3 +1,4 @@
+import re
 import time
 import logging
 import random
@@ -8,7 +9,8 @@ import sys
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually, refresh_token
 from webhook_service import get_webhook_service_worker, get_otp_from_webhook
-from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE
+from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
+    REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
 from utils import booking_alert, get_booking_details, get_timestamp
 
 logging.getLogger('asyncio').setLevel(logging.WARNING)
@@ -59,6 +61,8 @@ def auto_book(mobile_number=None,
         return app_id
 
     while True:
+        exception_message = ""
+
         try:
             logger.info("Polling ...")
             client.get_beneficiaries()
@@ -130,8 +134,12 @@ def auto_book(mobile_number=None,
         except Exception as e:
             logger.error(e)
             client.auto_refresh_token_retries_attempted = 0
+            exception_message = e
 
-        time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
+        # Sleep only in case errors pertain to unavailability of slot or unsuccessful booking
+        # There is a good chance that there could be other centres that could have opened immediately and can be tried
+        if not any([re.search(p, exception_message) for p in REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX]):
+            time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 
 
 def confirm_and_save_booking_details():

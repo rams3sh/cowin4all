@@ -134,10 +134,11 @@ def auto_book(mobile_number=None,
         except Exception as e:
             logger.error(e)
             client.auto_refresh_token_retries_attempted = 0
-            exception_message = e
+            exception_message = str(e)
 
         # Sleep only in case errors pertain to unavailability of slot or unsuccessful booking
         # There is a good chance that there could be other centres that could have opened immediately and can be tried
+
         if not any([re.search(p, exception_message) for p in REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX]):
             time.sleep(random.uniform(POLL_TIME_RANGE[0], POLL_TIME_RANGE[1]))
 

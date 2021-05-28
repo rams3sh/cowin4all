@@ -1,7 +1,9 @@
 # Local testing files / folders
 others/
+.token
 *booking_information.json*
 *test*
+*_confirmation.pdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

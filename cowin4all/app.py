@@ -3,22 +3,28 @@ import time
 import logging
 import random
 import json
+import argparse
 import os
 import sys
 
 from cowin4all_sdk.api import APIClient
 from cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
-from webhook_service import get_webhook_service_worker, get_otp_from_webhook
 from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
-from utils import get_booking_details, get_timestamp  # , booking_alert
+from utils import get_booking_details, get_timestamp, get_platform  # , booking_alert
 
-logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.WARNING)
+platform = get_platform()
 
-logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
+if platform != "android":
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    from otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
+else:
+    from otp_plugins.android_termux import get_otp_from_termux_api
+
+
+logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
 
 def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
@@ -193,31 +199,61 @@ def read_booking_info():
             os.remove(BOOKING_INFORMATION_FILE)
     else:
         print("There is no booking information available !!")
+        return
 
     return booking_info
 
 
-if __name__ == "__main__":
-
+def main():
     if len(sys.argv) < 2:
         confirm_and_save_booking_details()
         booking_info = read_booking_info()
-        api_service = get_webhook_service_worker()
-        with api_service():
-            auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
+        if platform != "android":
+            api_service = get_webhook_service_worker()
+            with api_service():
+                auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
+        else:
+            auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)
 
     elif sys.argv[1] == "test":
-        print("Testing SMSSync integration :")
-        mob = read_booking_info()["mobile_number"]
-        service = get_webhook_service_worker()
-        with service():
-            client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=False)
-            while True:
-                try:
-                    refresh_token(client=client)
-                    print("\n\nIntegration working fine !! Exiting ..")
-                    break
-                except Exception as e:
-                    print(e)
+        pass
 
-                time.sleep(20)
+    elif sys.argv[1] == "test":
+        binfo = read_booking_info()
+        if binfo:
+            mob = binfo["mobile_number"]
+            if platform != "android":
+                print("Testing SMSSync integration :")
+                service = get_webhook_service_worker()
+                with service():
+                    client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook,
+                                       auto_refresh_token=False)
+                    while True:
+                        try:
+                            refresh_token(client=client)
+                            print("\n\nIntegration working fine !! Exiting ..")
+                            break
+                        except Exception as e:
+                            print(e)
+
+                        time.sleep(20)
+            else:
+                client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_termux_api,
+                                   auto_refresh_token=False)
+                while True:
+                    try:
+                        refresh_token(client=client)
+                        print("\n\nIntegration working fine !! Exiting ..")
+                        break
+                    except Exception as e:
+                        print(e)
+
+        else:
+            print("Booking information is not available !! Kindly ")
+
+    else:
+        print("Invalid argument !! \n Usage:- \n cowin4all ")
+
+
+if __name__ == "__main__":
+    main()

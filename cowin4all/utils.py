@@ -2,10 +2,12 @@ from datetime import datetime, timedelta
 from copy import deepcopy
 from jsonschema.exceptions import ValidationError
 # import multiprocessing
-# import os
+import os
 import re
 import tabulate
 import jsonschema
+import sys
+import subprocess
 
 from settings import BOOKING_MODES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
 from cowin4all_sdk.api import APIClient
@@ -551,3 +553,22 @@ def get_booking_details(client=None, booking_details=None):
             booking_details = get_booking_details(client=client)
 
     return booking_details
+
+
+def get_platform():
+    platform = sys.platform
+    if platform in ('win32', 'cygwin'):
+        return 'windows'
+    elif platform == 'darwin':
+        return 'macosx'
+    elif platform.startswith('linux'):
+        path = str(subprocess.check_output('which python3', shell=True))
+        if "com.termux" in path:
+            return "android"
+        else:
+            return "linux"
+    elif platform.startswith('freebsd'):
+        return 'linux'
+    return 'unknown'
+
+

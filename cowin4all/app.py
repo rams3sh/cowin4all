@@ -7,7 +7,7 @@ import os
 import sys
 
 from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.utils import get_applicable_sessions, get_captcha_input_manually, refresh_token
+from cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
 from webhook_service import get_webhook_service_worker, get_otp_from_webhook
 from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
@@ -38,7 +38,7 @@ def auto_book(mobile_number=None,
         booking_alert()
         slot = slots[-1]
         c = client.get_captcha()
-        captcha = get_captcha_input_manually(captcha=c, client=client)
+        captcha = break_captcha(captcha_svg=c)
         try:
             app_id = client.schedule_booking(beneficiaries=beneficiaries,
                                              session_id=session_id,
@@ -136,7 +136,7 @@ def auto_book(mobile_number=None,
             client.auto_refresh_token_retries_attempted = 0
             exception_message = str(e)
 
-        # Sleep only in case errors pertain to unavailability of slot or unsuccessful booking
+        # Sleep only in case errors does not pertain to unavailability of slot or unsuccessful booking
         # There is a good chance that there could be other centres that could have opened immediately and can be tried
 
         if not any([re.search(p, exception_message) for p in REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX]):

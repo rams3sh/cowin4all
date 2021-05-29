@@ -11,7 +11,7 @@ from cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_ca
 from webhook_service import get_webhook_service_worker, get_otp_from_webhook
 from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
-from utils import booking_alert, get_booking_details, get_timestamp
+from utils import get_booking_details, get_timestamp  # , booking_alert
 
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -35,7 +35,7 @@ def auto_book(mobile_number=None,
                              dose_number=None,
                              center_id=None,
                              session_id=None):
-        booking_alert()
+        # booking_alert()
         slot = slots[-1]
         c = client.get_captcha()
         captcha = break_captcha(captcha_svg=c)
@@ -218,6 +218,6 @@ if __name__ == "__main__":
                     print("\n\nIntegration working fine !! Exiting ..")
                     break
                 except Exception as e:
-                    pass
+                    print(e)
 
                 time.sleep(20)

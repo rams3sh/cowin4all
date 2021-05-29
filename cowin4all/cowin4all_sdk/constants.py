@@ -15,12 +15,21 @@ endpoint_map = {
     "SCHEDULE_BOOKING": {"METHOD": "POST", "ENDPOINT": base_url + "appointment/schedule"},
     "GET_CONFIRMATION_FORM": {"METHOD": "GET", "ENDPOINT": base_url + "appointment/appointmentslip/download"}
 }
-default_request_retry_backoff_factor_seconds = 0.3
-default_request_timeout_seconds = (60, 3)
-default_blocked_request_retry_backoff_factor_seconds = 2
-default_connection_error_retry_attempts = 3
+# Timeout in seconds case of ConnectionTimeout / ReadTimeout
+default_request_timeout_seconds = 3
+# Number of times refresh of a token is to be attempted
 delay_refresh_token_retry_delay_seconds = 5
+
+# Delay factor in seconds to be given during every retry in case of ConnectionTimeout / ReadTimeout
+default_request_retry_backoff_factor_seconds = 0.3
+# Delay factor in seconds to be given during every retry in case of request is blocked
+default_blocked_request_retry_backoff_factor_seconds = 5
+
+# Number of retries to be attempted in case of ConnectionTimeout / ReadTimeout
+default_connection_error_retry_attempts = 3
+# Number of retries to be attempted in case of unsuccessful token refresh
 default_refresh_token_retries_attempts = 3
+
 default_auto_refresh_token = True
 default_retry_blocked_request = True
 

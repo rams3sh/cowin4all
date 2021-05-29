@@ -1,14 +1,14 @@
 from fastapi import FastAPI, Request
 import contextlib
 import uvicorn
-import multiprocessing
+# import multiprocessing
 import time
 import threading
 import logging
 import re
 
-from settings import COWIN4ALL_SERVICE_PORT, OTP_ALERT_AUDIO_PATH
-from utils import play_sound
+from settings import COWIN4ALL_SERVICE_PORT, OTP_REQUEST_TIMEOUT_SECONDS  #, OTP_ALERT_AUDIO_PATH
+# from utils import play_sound
 
 
 logger = logging.getLogger(__name__)
@@ -18,34 +18,40 @@ event_waiter = threading.Event()
 otp_alert_running = False
 
 
-def otp_alert(sleep):
-    global otp_alert_running, otp
-
-    def monitor_for_incoming_otp_and_alert(sleep):
-        global otp_alert_running
-        logger.info("Waiting for alerting the user for OTP in case not received !!")
-        time.sleep(sleep)
-        if otp:
-            otp_alert_running = False
-            return
-        else:
-            play_sound(OTP_ALERT_AUDIO_PATH)
-
-    if not otp_alert_running:
-        otp_alert_running = True
-        p = multiprocessing.Process(target=monitor_for_incoming_otp_and_alert, args=(sleep,), daemon=True)
-        p.start()
-    else:
-        return
+# def otp_alert(sleep):
+#     global otp_alert_running, otp
+#
+#     def monitor_for_incoming_otp_and_alert(sleep):
+#         global otp_alert_running
+#         logger.info("Waiting for alerting the user for OTP in case not received !!")
+#         time.sleep(sleep)
+#         if otp:
+#             otp_alert_running = False
+#             return
+#         else:
+#             play_sound(OTP_ALERT_AUDIO_PATH)
+#             time.sleep(120-sleep)
+#
+#     if not otp_alert_running:
+#         otp_alert_running = True
+#         p = multiprocessing.Process(target=monitor_for_incoming_otp_and_alert, args=(sleep,), daemon=True)
+#         p.start()
+#     else:
+#         return
 
 
 def get_otp_from_webhook(client=None):
     global otp, event_waiter, otp_alert_running
+    otp = None
+    otp_alert_running = False
     logger.info("Waiting for OTP !! ")
-    otp_alert(sleep=10)
-    event_waiter.wait()
+    # otp_alert(sleep=10)
+    event_waiter.wait(timeout=OTP_REQUEST_TIMEOUT_SECONDS)
     event_waiter.clear()
-    logger.info("OTP Received: " + str(otp))
+    if otp:
+        logger.info("OTP Received: " + str(otp))
+    else:
+        logger.info("OTP wait timed-out !! Re-requesting !!")
     return otp
 
 

@@ -1,13 +1,15 @@
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPM
-import PySimpleGUI as sg
+# from svglib.svglib import svg2rlg
+# from reportlab.graphics import renderPM
+# import PySimpleGUI as sg
+# import os
+# import tempfile
 import requests
+import functools
 import logging
 import re
-import os
-import tempfile
+
 import datetime
 import time
 
@@ -20,7 +22,7 @@ from cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_
 logger = logging.getLogger(__name__)
 
 
-def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(500, 502, 504)):
+def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(500, 502, 504), timeout=None):
     session = requests.Session()
     retry = Retry(
         total=retries,
@@ -33,10 +35,14 @@ def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(
     session.mount('http://', adapter)
     session.mount('https://', adapter)
 
+    for method in ('get', 'options', 'head', 'post', 'put', 'patch', 'delete'):
+        setattr(session, method, functools.partial(getattr(session, method), timeout=timeout))
+
     return session
 
 
-def send_request(action=None, payload=None, backoff_factor=default_request_retry_backoff_factor_seconds,
+def send_request(action=None, payload=None,
+                 backoff_factor=default_request_retry_backoff_factor_seconds,
                  additional_headers=None,
                  blocked_request_backoff_factor=default_blocked_request_retry_backoff_factor_seconds,
                  timeout: int = default_request_timeout_seconds,
@@ -89,8 +95,10 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
         logger.debug("Request Body :-\nMethod : {} , \nURL : {}, \nHeaders : {} , \nPayload : {}\n".format(
             request.method, request.url, request.headers, request.body))
         session = requests_retry_session(retries=connection_error_retries,
-                                         backoff_factor=backoff_factor)
-        response = session.send(request, timeout=timeout, allow_redirects=False)
+                                         backoff_factor=backoff_factor,
+                                         timeout=timeout
+                                         )
+        response = session.send(request, allow_redirects=False)
         logger.debug("Response Body :-\nStatus Code : {} , \nHeaders : {} , \nBody : {}\n".format(
             response.status_code, response.headers, response.content))
 
@@ -227,51 +235,6 @@ def get_applicable_sessions(client=None, pin_codes: list = None,
     return filtered_sessions
 
 
-def save_captcha_2_png(captcha=None):
-    file_path = os.path.join(tempfile.gettempdir(), str(datetime.datetime.now().timestamp()) + "_captcha")
-
-    with open(file_path + ".svg", 'w') as f:
-        f.write(captcha)
-
-    drawing = svg2rlg(file_path + ".svg")
-    captcha_image_path = file_path + ".png"
-    renderPM.drawToFile(drawing, captcha_image_path, fmt="PNG")
-    os.remove(file_path + ".svg")
-    return captcha_image_path
-
-
-def get_captcha_input_manually(captcha=None, client=None, _initial_call=True, alert_method=None):
-    # One can initialise a custom alerter method for alerting
-    if _initial_call:
-        if alert_method:
-            alert_method()
-
-    captcha_image_path = save_captcha_2_png(captcha=captcha)
-
-    layout = [[sg.Image(captcha_image_path)],
-              [sg.Text("Enter Captcha Below")],
-              [sg.Input()],
-              [sg.Button('Submit', bind_return_key=True)],
-              ]
-    if client:
-        layout[3] += [sg.Button('Refresh')]
-
-    window = sg.Window('Enter Captcha', layout)
-    event, values = window.read()
-    if event == "Refresh":
-        os.remove(captcha_image_path)
-        return get_captcha_input_manually(captcha=client.get_captcha(), client=client, _initial_call=False)
-    else:
-        window.close()
-        os.remove(captcha_image_path)
-        if values:
-            # The below check is to consider closing of window without entering any captcha.
-            # NoneType does not have strip attribute
-            if values[1]:
-                return values[1].strip()
-        return
-
-
 def get_otp_manually(client=None):
     return input("Enter OTP : ")
 
@@ -309,4 +272,49 @@ def break_captcha(captcha_svg=None):
 
     return value
 
+
+# This is no longer required, since auto captcha breaker logic has been added
+# def save_captcha_2_png(captcha=None):
+#     file_path = os.path.join(tempfile.gettempdir(), str(datetime.datetime.now().timestamp()) + "_captcha")
+#
+#     with open(file_path + ".svg", 'w') as f:
+#         f.write(captcha)
+#
+#     drawing = svg2rlg(file_path + ".svg")
+#     captcha_image_path = file_path + ".png"
+#     renderPM.drawToFile(drawing, captcha_image_path, fmt="PNG")
+#     os.remove(file_path + ".svg")
+#     return captcha_image_path
+
+#
+# def get_captcha_input_manually(captcha=None, client=None, _initial_call=True, alert_method=None):
+#     # One can initialise a custom alerter method for alerting
+#     if _initial_call:
+#         if alert_method:
+#             alert_method()
+#
+#     captcha_image_path = save_captcha_2_png(captcha=captcha)
+#
+#     layout = [[sg.Image(captcha_image_path)],
+#               [sg.Text("Enter Captcha Below")],
+#               [sg.Input()],
+#               [sg.Button('Submit', bind_return_key=True)],
+#               ]
+#     if client:
+#         layout[3] += [sg.Button('Refresh')]
+#
+#     window = sg.Window('Enter Captcha', layout)
+#     event, values = window.read()
+#     if event == "Refresh":
+#         os.remove(captcha_image_path)
+#         return get_captcha_input_manually(captcha=client.get_captcha(), client=client, _initial_call=False)
+#     else:
+#         window.close()
+#         os.remove(captcha_image_path)
+#         if values:
+#             # The below check is to consider closing of window without entering any captcha.
+#             # NoneType does not have strip attribute
+#             if values[1]:
+#                 return values[1].strip()
+#         return
 

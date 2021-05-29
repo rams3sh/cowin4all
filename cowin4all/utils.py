@@ -1,25 +1,24 @@
 from datetime import datetime, timedelta
 from copy import deepcopy
 from jsonschema.exceptions import ValidationError
-import multiprocessing
-import os
+# import multiprocessing
+# import os
 import re
 import tabulate
 import jsonschema
 
-from settings import AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH, BOOKING_MODES
+from settings import BOOKING_MODES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
 from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.utils import refresh_token
 from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
 
 
-def play_sound(file_path):
-    os.system(AUDIO_FILE_PLAYING_COMMAND.format(audio_file_path=file_path))
-
-
-def booking_alert():
-    p = multiprocessing.Process(target=play_sound, args=(BOOKING_ALERT_AUDIO_PATH, ), daemon=True)
-    p.start()
+# def play_sound(file_path):
+#     os.system(AUDIO_FILE_PLAYING_COMMAND.format(audio_file_path=file_path))
+#
+#
+# def booking_alert():
+#     p = multiprocessing.Process(target=play_sound, args=(BOOKING_ALERT_AUDIO_PATH, ), daemon=True)
+#     p.start()
 
 
 # Take from bombardier-gif's code base and modified it for multiple data type support
@@ -75,7 +74,7 @@ def validate_selected_beneficiaries(beneficiaries):
                          "beneficiaries' vaccine type is same !!")
 
 
-def validate_serial_no(snos=None):
+def validate_serial_no(snos: (int, list) = None):
 
     if not isinstance(snos, set):
         snos = {snos}
@@ -445,10 +444,10 @@ def validate_booking_details(booking_details=None):
 def get_booking_details(client=None, booking_details=None):
 
     if not booking_details:
+
         if not client:
             mobile_number = get_mobile_no()
             client = APIClient(mobile_no=mobile_number)
-            refresh_token(client=client)
 
         booking_details = {"mobile_number": client.mobile}
 

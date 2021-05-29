@@ -1,2 +1,2 @@
 include requirements.txt
-include *captcha_char_mapping.json
+include *.json

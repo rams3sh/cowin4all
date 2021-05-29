@@ -6,7 +6,7 @@ import threading
 import time
 import re
 
-from settings import OTP_REQUEST_TIMEOUT_SECONDS
+from cowin4all.settings import OTP_REQUEST_TIMEOUT_SECONDS
 
 logger = logging.getLogger(__name__)
 

@@ -9,9 +9,9 @@ import jsonschema
 import sys
 import subprocess
 
-from settings import BOOKING_MODES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
-from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
+from cowin4all.settings import BOOKING_MODES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
+from cowin4all.cowin4all_sdk.api import APIClient
+from cowin4all.cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
 
 
 # def play_sound(file_path):

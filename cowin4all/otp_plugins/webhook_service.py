@@ -7,7 +7,7 @@ import threading
 import logging
 import re
 
-from settings import COWIN4ALL_SERVICE_PORT, OTP_REQUEST_TIMEOUT_SECONDS  #, OTP_ALERT_AUDIO_PATH
+from cowin4all.settings import COWIN4ALL_SERVICE_PORT, OTP_REQUEST_TIMEOUT_SECONDS  #, OTP_ALERT_AUDIO_PATH
 # from utils import play_sound
 
 

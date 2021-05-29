@@ -7,11 +7,11 @@ import argparse
 import os
 import sys
 
-from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
-from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
+from cowin4all.cowin4all_sdk.api import APIClient
+from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
+from cowin4all.settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
-from utils import get_booking_details, get_timestamp, get_platform  # , booking_alert
+from cowin4all.utils import get_booking_details, get_timestamp, get_platform  # , booking_alert
 
 platform = get_platform()
 

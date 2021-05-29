@@ -23,8 +23,9 @@ else:
     from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api
 
 
-logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
+logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
@@ -198,32 +199,29 @@ def read_booking_info():
                   "".format(BOOKING_INFORMATION_FILE))
             os.remove(BOOKING_INFORMATION_FILE)
     else:
-        print("There is no booking information available !!")
+        print("There is no booking information available !! Kindly enter the booking details and try again !!")
         return
 
     return booking_info
 
 
 def main():
-    if len(sys.argv) < 2:
+
+    parser = argparse.ArgumentParser(description='cowin4all')
+    parser.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
+    parser.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
+
+    args = parser.parse_args()
+
+    if args.enter_details:
         confirm_and_save_booking_details()
-        booking_info = read_booking_info()
-        if platform != "android":
-            api_service = get_webhook_service_worker()
-            with api_service():
-                auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
-        else:
-            auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)
 
-    elif sys.argv[1] == "test":
-        pass
-
-    elif sys.argv[1] == "test":
+    elif args.test_otp:
         binfo = read_booking_info()
         if binfo:
             mob = binfo["mobile_number"]
             if platform != "android":
-                print("Testing SMSSync integration :")
+                print("Testing SMS-Webhook integration :")
                 service = get_webhook_service_worker()
                 with service():
                     client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook,
@@ -248,12 +246,12 @@ def main():
                     except Exception as e:
                         print(e)
 
-        else:
-            print("Booking information is not available !! Kindly ")
-
     else:
-        print("Invalid argument !! \n Usage:- \n cowin4all ")
-
-
-if __name__ == "__main__":
-    main()
+        confirm_and_save_booking_details()
+        booking_info = read_booking_info()
+        if platform != "android":
+            api_service = get_webhook_service_worker()
+            with api_service():
+                auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
+        else:
+            auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)

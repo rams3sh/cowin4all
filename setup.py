@@ -44,5 +44,9 @@ setuptools.setup(
     packages=["cowin4all", "cowin4all.cowin4all_sdk", "cowin4all.otp_plugins"],
     install_requires=required,
     include_package_data=True,
-    entry_points={'console_scripts': ['cowin4all_app=app:main']},
-    python_requires='>=3.8')
+    package_data={
+        "cowin4all_sdk": ["captcha_char_mapping.json"],
+    },
+    entry_points={'console_scripts': ['cowin4all=cowin4all.app:main']},
+    python_requires='>=3.8'
+    )

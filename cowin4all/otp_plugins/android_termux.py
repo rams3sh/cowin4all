@@ -46,14 +46,15 @@ def listen_on_new_messages():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, shell=True)
 
-        if tmux_sms_list.returncode != 0:
-            print(tmux_sms_list.communicate()[0])
+        stdout = tmux_sms_list.communicate()[0].decode('utf-8')
+        stderr = tmux_sms_list.communicate()[1].decode('utf-8')
+        if "found" in stderr:
+            print(tmux_sms_list.communicate()[0], tmux_sms_list.returncode)
             otp = None
             event_waiter.set()
             raise Exception("termux-api is not installed !!")
 
-        messages = tmux_sms_list.communicate()[0].decode('utf-8')
-        messages = json.loads(messages)
+        messages = json.loads(stdout)
 
         for message in messages:
             match = re.findall("(?<=CoWIN is )[0-9]{6}", message)

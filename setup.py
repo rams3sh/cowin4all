@@ -23,7 +23,7 @@ def get_platform():
 operating_system = get_platform()
 
 with open('requirements.txt') as f:
-    required = [p.strip() for p in f.read().splitlines()]
+    required = [p.strip() for p in f.read().splitlines() if not p.startswith("#")]
 
 if operating_system == "android":
     not_required = ["uvicorn", "fastapi"]
@@ -31,10 +31,14 @@ if operating_system == "android":
     for r in required:
         for n in not_required:
             if r.startswith(n):
-                required.remove(r)
+                continue
+            else:
+                temp.append(r)
     required = temp
 
+
 version = "0.0"
+
 
 setuptools.setup(
     name="cowin4all",

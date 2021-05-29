@@ -245,6 +245,7 @@ def main():
                         break
                     except Exception as e:
                         print(e)
+                    time.sleep(20)
 
     else:
         confirm_and_save_booking_details()

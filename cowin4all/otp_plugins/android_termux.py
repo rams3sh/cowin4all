@@ -47,6 +47,7 @@ def listen_on_new_messages():
             stderr=subprocess.PIPE, shell=True)
 
         if tmux_sms_list.returncode != 0:
+            print(tmux_sms_list.communicate()[0])
             otp = None
             event_waiter.set()
             raise Exception("termux-api is not installed !!")

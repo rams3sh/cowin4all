@@ -18,9 +18,9 @@ platform = get_platform()
 if platform != "android":
     logging.getLogger('asyncio').setLevel(logging.WARNING)
     logging.getLogger('urllib3').setLevel(logging.WARNING)
-    from otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
+    from cowin4all.otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
 else:
-    from otp_plugins.android_termux import get_otp_from_termux_api
+    from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api
 
 
 logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)

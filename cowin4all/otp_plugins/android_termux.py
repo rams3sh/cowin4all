@@ -46,13 +46,14 @@ def listen_on_new_messages():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, shell=True)
 
-        stdout = tmux_sms_list.communicate()[0].decode('utf-8')
-        stderr = tmux_sms_list.communicate()[1].decode('utf-8')
-        if "found" in stderr:
-            print(tmux_sms_list.communicate()[0], tmux_sms_list.returncode)
+        output = tmux_sms_list.communicate()
+        stdout = output[0].decode('utf-8')
+        stderr = output[1].decode('utf-8').lower()
+        # Normally the message with "found" or "no" pertains to "command not found / No such commmand etc..".
+        if "found" in stderr or "no" in stderr:
             otp = None
             event_waiter.set()
-            raise Exception("termux-api is not installed !!")
+            raise Exception("termux-api is not installed !! Error message : {}".format(stderr))
 
         messages = json.loads(stdout)
 

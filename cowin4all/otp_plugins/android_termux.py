@@ -56,8 +56,9 @@ def listen_on_new_messages():
             raise Exception("termux-api is not installed !! Error message : {}".format(stderr))
 
         messages = json.loads(stdout)
-
+        print(messages)
         for message in messages:
+            print(message)
             match = re.findall("(?<=CoWIN is )[0-9]{6}", message)
             if match:
                 received_time = datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S")

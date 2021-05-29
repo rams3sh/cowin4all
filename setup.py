@@ -41,7 +41,7 @@ setuptools.setup(
     author="rams3sh",
     description="Python App and SDK for developing CoWIN slot booking",
     version=version,
-    packages=["cowin4all", "cowin4all.cowin4all_sdk"],
+    packages=["cowin4all", "cowin4all.cowin4all_sdk", "cowin4all.otp_plugins"],
     install_requires=required,
     include_package_data=True,
     entry_points={'console_scripts': ['cowin4all=app:main']},

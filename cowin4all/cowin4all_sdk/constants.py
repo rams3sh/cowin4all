@@ -1,3 +1,5 @@
+import os.path
+import json
 
 base_url = "https://cdn-api.co-vin.in/api/v2/"
 
@@ -14,10 +16,10 @@ endpoint_map = {
     "GET_CONFIRMATION_FORM": {"METHOD": "GET", "ENDPOINT": base_url + "appointment/appointmentslip/download"}
 }
 default_request_retry_backoff_factor_seconds = 0.3
-default_request_timeout_seconds = 60
+default_request_timeout_seconds = (60, 3)
 default_blocked_request_retry_backoff_factor_seconds = 2
 default_connection_error_retry_attempts = 3
-delay_refresh_token_retry_delay_seconds = 3
+delay_refresh_token_retry_delay_seconds = 5
 default_refresh_token_retries_attempts = 3
 default_auto_refresh_token = True
 default_retry_blocked_request = True
@@ -31,3 +33,7 @@ vaccine_types = ["covaxin", "covishield", "sputnik v"]
 minimum_age_limits = [18, 45]
 doses = [1, 2]
 payment_types = ["paid", "free"]
+
+captcha_char_mapping = {}
+with open(os.path.join(os.path.dirname(__file__), "captcha_char_mapping.json"), "r") as f:
+    captcha_char_mapping = json.loads(f.read())

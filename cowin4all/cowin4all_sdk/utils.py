@@ -15,7 +15,7 @@ from cowin4all_sdk.constants import endpoint_map, default_request_retry_backoff_
     default_request_timeout_seconds, \
     default_connection_error_retry_attempts, default_blocked_request_retry_backoff_factor_seconds, \
     delay_refresh_token_retry_delay_seconds, default_user_agent, \
-    vaccine_types, doses, payment_types, minimum_age_limits, base_url
+    vaccine_types, doses, payment_types, minimum_age_limits, base_url, captcha_char_mapping
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(
         read=retries,
         connect=retries,
         backoff_factor=backoff_factor,
-        status_forcelist=status_forcelist,
+        status_forcelist=status_forcelist
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
@@ -65,6 +65,7 @@ def send_request(action=None, payload=None, backoff_factor=default_request_retry
     headers = dict()
     base_headers = {'User-Agent': default_user_agent,
                     'Content-Type': 'application/json',
+                    'Connection': 'Close',
                     'Origin': base_url.rstrip("/"),
                     'Referer': base_url}
 
@@ -290,3 +291,22 @@ def refresh_token(client=None):
     except:
         raise Exception("Invalid OTP !!")
     return client
+
+
+def break_captcha(captcha_svg=None):
+    model = captcha_char_mapping
+    svg_data = captcha_svg
+    paths = [re.findall("(?<=d\\=\").*(?=\")", p)[0] for p in re.findall("<path [^>]+(?=/\\>)", svg_data)]
+    captcha_map = {}
+    for path in paths:
+        index = re.findall("(?<=^M)[0-9]+", path)[0]
+        encoded_string = "".join(re.findall("[A-Z]", path))
+        captcha_map[int(index)] = model.get(encoded_string)
+
+    captcha_map = sorted(captcha_map.items())
+
+    value = "".join("".join([c[1] for c in captcha_map]))
+
+    return value
+
+

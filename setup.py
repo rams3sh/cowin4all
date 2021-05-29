@@ -25,17 +25,15 @@ operating_system = get_platform()
 with open('requirements.txt') as f:
     required = [p.strip() for p in f.read().splitlines() if not p.startswith("#")]
 
-if operating_system == "android":
+if operating_system == "linux":
     not_required = ["uvicorn", "fastapi"]
     temp = []
     for r in required:
-        for n in not_required:
-            if r.startswith(n):
-                continue
-            else:
-                temp.append(r)
+        if any([n for n in not_required if r.startswith(n)]):
+            continue
+        else:
+            temp.append(r)
     required = temp
-
 
 version = "0.0"
 

@@ -16,7 +16,7 @@ time_of_request = None
 event_waiter = threading.Event()
 
 
-def get_otp_from_termux_api():
+def get_otp_from_termux_api(client=None):
     global otp, timeout, time_of_request
     otp = None
     time_of_request = datetime.now()

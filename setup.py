@@ -1,13 +1,31 @@
 import setuptools
+import sys
+import subprocess
 
-from cowin4all.utils import get_platform
 
-platform = get_platform()
+def get_platform():
+    platform = sys.platform
+    if platform in ('win32', 'cygwin'):
+        return 'windows'
+    elif platform == 'darwin':
+        return 'macosx'
+    elif platform.startswith('linux'):
+        path = str(subprocess.check_output('which python3', shell=True))
+        if "com.termux" in path:
+            return "android"
+        else:
+            return "linux"
+    elif platform.startswith('freebsd'):
+        return 'linux'
+    return 'unknown'
+
+
+operating_system = get_platform()
 
 with open('requirements.txt') as f:
-    required = f.read().splitlines()
+    required = [p.strip() for p in f.read().splitlines()]
 
-if platform == "android":
+if operating_system == "android":
     not_required = ["uvicorn", "fastapi"]
     temp = []
     for r in required:

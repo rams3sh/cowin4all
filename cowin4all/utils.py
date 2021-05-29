@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from copy import deepcopy
 from jsonschema.exceptions import ValidationError
 # import multiprocessing
-import os
+# import os
 import re
 import tabulate
 import jsonschema

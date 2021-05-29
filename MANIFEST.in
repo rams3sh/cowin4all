@@ -1,2 +1,2 @@
 include requirements.txt
-include *.json
+include cowin4all/cowin4all_sdk/captcha_char_mapping.json

@@ -39,6 +39,8 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     sleep_time = 2
     last_received_message = None
     try:
+        logger.info("Listening for new messages ... !!! The screen may seem frozen. "
+                    "But don't worry !! I am actually listening !!")
         while True:
             if not otp_forwarder_mode:
                 if event_waiter.is_set():
@@ -70,10 +72,9 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
                             event_waiter.set()
                             break
                         else:
-                            if message != last_received_message:
-                                logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
-                                            "".format(message=message))
-                                requests.put(url=url, json=message)
+                            logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
+                                        "".format(message=message))
+                            requests.put(url=url, json=message)
 
             time.sleep(sleep_time)
     except Exception:

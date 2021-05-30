@@ -57,7 +57,7 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
         output = tmux_sms_list.communicate()
         stdout = output[0].decode('utf-8')
         stderr = output[1].decode('utf-8').lower()
-        # Normally the message with "found" or "no" pertains to "command not found / No such commmand etc..".
+        # Normally the message with "found" or "no" pertains to "command not found / No such command etc..".
         if "found" in stderr or "no" in stderr:
             otp = None
             event_waiter.set()
@@ -92,6 +92,8 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
                                         "Kindly check the webhook service !!")
                         else:
                             # Consider the message as sent if found stale
+                            logger.info("Message: {} has gone stale and no more valid !! Ignoring the message "
+                                        "going forward !!".format(message))
                             last_received_message = message
                             last_message_received_time = message_received_time
 

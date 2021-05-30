@@ -7,10 +7,11 @@ import argparse
 import os
 
 from cowin4all.cowin4all_sdk.api import APIClient
-from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
+from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token
 from cowin4all.settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
 from cowin4all.utils import get_booking_details, get_timestamp, get_platform, get_webhook_url  # , booking_alert
+from cowin4all.captcha_plugins.svg_pattern_analysis import break_captcha
 
 platform = get_platform()
 
@@ -30,6 +31,7 @@ def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
               vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
               beneficiary_ids= None, booking_mode=None, otp_retrieval_method=None,
+              captcha_retrieval_method=break_captcha
               ):
 
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=otp_retrieval_method, auto_refresh_token=True,
@@ -44,7 +46,8 @@ def auto_book(mobile_number=None,
         # booking_alert()
         slot = slots[-1]
         c = client.get_captcha()
-        captcha = break_captcha(captcha_svg=c)
+        captcha = captcha_retrieval_method(captcha_svg=c)
+
         try:
             app_id = client.schedule_booking(beneficiaries=beneficiaries,
                                              session_id=session_id,

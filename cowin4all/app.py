@@ -10,7 +10,7 @@ from cowin4all.cowin4all_sdk.api import APIClient
 from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
 from cowin4all.settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
-from cowin4all.utils import get_booking_details, get_timestamp, get_platform  # , booking_alert
+from cowin4all.utils import get_booking_details, get_timestamp, get_platform, get_webhook_url  # , booking_alert
 
 platform = get_platform()
 
@@ -19,7 +19,7 @@ if platform != "android":
     logging.getLogger('urllib3').setLevel(logging.WARNING)
     from cowin4all.otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
 else:
-    from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api
+    from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api, listen_on_new_messages
 
 
 logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
@@ -209,10 +209,14 @@ def read_booking_info():
 def main():
 
     parser = argparse.ArgumentParser(description='cowin4all')
-    parser.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
-    parser.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
+    modes.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
+    modes.add_argument("-o", "--otp-forward", help="run as OTP forwarder for android", action='store_true')
 
     args = parser.parse_args()
+
+    print(args)
 
     if args.enter_details:
         confirm_and_save_booking_details()
@@ -247,7 +251,15 @@ def main():
                     except Exception as e:
                         print(e)
                     time.sleep(20)
-
+    elif args.otp_forward:
+        if platform == "android":
+            url = get_webhook_url()
+            if url:
+                while True:
+                    listen_on_new_messages(otp_forwarder_mode=True, url=url)
+                    time.sleep(2)
+        else:
+            print("This mode works only in android !! Current running platform is not android !!")
     else:
         confirmation = confirm_and_save_booking_details()
         if confirmation == "details saved":

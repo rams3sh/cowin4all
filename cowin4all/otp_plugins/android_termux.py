@@ -4,6 +4,7 @@ import subprocess
 import json
 import threading
 import time
+import requests
 import re
 
 from cowin4all.settings import OTP_REQUEST_TIMEOUT_SECONDS
@@ -33,7 +34,7 @@ def get_otp_from_termux_api(client=None):
     return otp
 
 
-def listen_on_new_messages():
+def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     global event_waiter, time_of_request, otp
 
     while True:
@@ -63,8 +64,12 @@ def listen_on_new_messages():
                 # Maximum limit of message receipt is 180.
                 # Keeping 150 is a safer option.
                 if (received_time - time_of_request).seconds < 150:
-                    otp = match[0]
-                    event_waiter.set()
-                    break
+                    if not otp_forwarder_mode:
+                        otp = match[0]
+                        event_waiter.set()
+                        break
+                    else:
+                        requests.put(url=url, json=message)
+                        return message
 
         time.sleep(2)

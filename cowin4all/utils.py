@@ -621,6 +621,28 @@ def get_booking_details(client=None, booking_details=None):
     return booking_details
 
 
+def get_webhook_url():
+    url = input("Enter url to forward the SMS: ")
+    try:
+        # Basic regex to match url
+        if not re.fullmatch("^http(|s):\\/\\/[^ \n \r]+$", url):
+            raise ValueError()
+    except Exception as e:
+        print("Invalid url provided !!")
+        response = select_yes_or_no(message="Do you want to re-enter the url ?")
+        if response == "n":
+            print("Sure !! Exiting !! ")
+            return
+        else:
+            url = get_webhook_url()
+            if not url:
+                return
+    if not url.endswith("/put_otp"):
+        url = url.rstrip("/").strip()
+        url += "/put_otp"
+    return url
+
+
 def get_platform():
     platform = sys.platform
     if platform in ('win32', 'cygwin'):

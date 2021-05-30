@@ -38,9 +38,11 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     global event_waiter, time_of_request, otp
     sleep_time = 2
     last_received_message = None
-    start_time = datetime.now()
+    last_message_received_time = datetime.now()
     logger.info("Listening for new messages ... !!! The screen may seem frozen. "
                 "But don't worry !! I am actually listening !!")
+    otp_expiry_seconds = 180
+
     while True:
         if not otp_forwarder_mode:
             if event_waiter.is_set():
@@ -66,20 +68,32 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
             match = re.findall("(?<=CoWIN is )[0-9]{6}", message["body"])
             if match:
                 if message != last_received_message:
-                    if start_time < datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S"):
-                        last_received_message = message
-                        if not otp_forwarder_mode:
-                            otp = match[0]
-                            event_waiter.set()
-                            break
+                    message_received_time = datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S")
+                    # We  want to consider only new messages that were not encountered during last listen loop.
+                    if last_message_received_time <= message_received_time:
+                        # We don't want to send stale OTPs to the webhook. Hence the below condition
+                        if not (datetime.now() - message_received_time).seconds >= otp_expiry_seconds:
+                            if not otp_forwarder_mode:
+                                otp = match[0]
+                                last_received_message = message
+                                last_message_received_time = message_received_time
+                                event_waiter.set()
+                                break
+                            else:
+                                logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
+                                            "".format(message=message))
+                                try:
+                                    requests.put(url=url, json=message)
+                                    last_received_message = message
+                                    last_message_received_time = message_received_time
+                                except Exception:
+                                    logger.error(
+                                        "External Service not accepting connections !! "
+                                        "Kindly check the webhook service !!")
                         else:
-                            logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
-                                        "".format(message=message))
-                            try:
-                                requests.put(url=url, json=message)
-                            except Exception:
-                                logger.error(
-                                    "External Service not accepting connections !! "
-                                    "Kindly check the webhook service and restart !!")
+                            # Consider the message as sent if found stale
+                            last_received_message = message
+                            last_message_received_time = message_received_time
+
         time.sleep(sleep_time)
 

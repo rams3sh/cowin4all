@@ -485,10 +485,10 @@ def validate_dose_booking_date(beneficiaries=None, booking_dates=None):
 
             valid_date = datetime.strftime((last_dose_date + timedelta(days=dose_gap)), "%d-%m-%Y")
             if invalid_dates:
-                error += "Beneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine on {last_dose_date} " \
-                         "and it is mandatory to wait for {days} days before next dosage. The following dates : " \
-                         "'{dates}' are not valid for the given beneficiary.Valid dates for the beneficiary is " \
-                         "any day from {valid_date} (on or after) \n\n" \
+                error += "\nBeneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine " \
+                         "on {last_dose_date} and it is mandatory to wait for {days} days before next dosage. " \
+                         "The following dates : '{dates}' are not valid for the given beneficiary.Valid dates for " \
+                         "the beneficiary is any day from {valid_date} (on or after) \n\n" \
                          "".format(beneficiary=name, last_dose_date=datetime.strftime(last_dose_date, "%d-%m-%Y"),
                                    dose=dose-1,
                                    vaccine=vaccine, days=dose_gap, dates="', '".join(invalid_dates),

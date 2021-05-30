@@ -650,7 +650,11 @@ def get_platform():
     elif platform == 'darwin':
         return 'macosx'
     elif platform.startswith('linux'):
-        path = str(subprocess.check_output('which python3', shell=True))
+        try:
+            path = str(subprocess.check_output('which python3', shell=True))
+        except subprocess.CalledProcessError as e:
+            # Normally encountered in centOs based system where `which` would not be present
+            path = ""
         if "com.termux" in path:
             return "android"
         else:

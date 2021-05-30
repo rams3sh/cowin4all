@@ -467,26 +467,28 @@ def validate_booking_details(booking_details=None):
 def validate_dose_booking_date(beneficiaries=None, booking_dates=None):
     error = ""
     for beneficiary in beneficiaries:
-        if beneficiary.get("awaited_dose") > 1:
+        if beneficiary["awaited_dose"] > 1:
             invalid_dates = []
-            dose = beneficiary.get("awaited_dose")
-            vaccine = beneficiary.get("vaccine")
-            last_dose_date = datetime.strptime(beneficiary.get["last_dose_date"], "%d-%m-%Y")
-            dose_gap = VACCINATION_DOSE_DATES[vaccine]["dose{}_date".format(dose)]
+            dose = beneficiary["awaited_dose"]
+            vaccine = beneficiary["vaccine"]
+            last_dose_date = datetime.strptime(beneficiary["last_dose_date"], "%d-%m-%Y")
+            dose_gap = VACCINATION_DOSE_DATES[vaccine]["dose{}".format(dose)]
             name = beneficiary.get("name")
             for date in booking_dates:
                 date = datetime.strptime(date, "%d-%m-%Y")
                 if (date - last_dose_date).days < dose_gap:
-                    invalid_dates.append(date)
+                    invalid_dates.append(datetime.strftime(date, "%d-%m-%Y"))
 
-            valid_date = datetime.strftime(last_dose_date + timedelta(days=dose_gap), "%d-%m-%Y")
+            valid_date = datetime.strftime((last_dose_date + timedelta(days=dose_gap)), "%d-%m-%Y")
             if invalid_dates:
-                error += "Beneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine and it is mandatory " \
-                         "to wait for {days} days before next  dosage. The following dates : {dates} are not valid " \
-                         "for the given beneficiary. \n Valid dates for the beneficiary is any day post " \
-                         "{valid_date}\n\n" \
-                         "".format(beneficiary=name, dose=dose-1,
-                                   vaccine=vaccine, days=dose_gap, dates=invalid_dates, valid_date=valid_date)
+                error += "Beneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine on {last_dose_date} " \
+                         "and it is mandatory to wait for {days} days before next dosage. The following dates : " \
+                         "'{dates}' are not valid for the given beneficiary. \n Valid dates for the beneficiary is " \
+                         "any day from {valid_date} (on or after) \n\n" \
+                         "".format(beneficiary=name, last_dose_date=datetime.strftime(last_dose_date, "%d-%m-%Y"),
+                                   dose=dose-1,
+                                   vaccine=vaccine, days=dose_gap, dates="', '".join(invalid_dates),
+                                   valid_date=valid_date)
 
     if error:
         error += "Please change the booking dates and try again!! "

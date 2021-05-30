@@ -51,5 +51,9 @@ setuptools.setup(
     install_requires=required,
     include_package_data=True,
     entry_points={'console_scripts': ['cowin4all=cowin4all.app:main']},
-    python_requires='>=3.8'
+    python_requires='>=3.8',
+    project_urls={
+        'Documentation': 'https://github.com/rams3sh/cowin4all',
+        'Source': 'https://github.com/rams3sh/cowin4all',
+    }
     )

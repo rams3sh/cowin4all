@@ -306,6 +306,7 @@ Please ensure you have installed all the pre-requisites as detailed in `3.1` bef
 >>>>
 >>>> 4. Update the configuration
 >>>> 5. Enable the integration
+>>>> 
    ![Integration Enable](media/smssync_integration_enable.png)
 
 6. Go to `Filters > CoWIN OTP Relay` (or to whichever name you have kept for the integration service) and add "CoWIN" 

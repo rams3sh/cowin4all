@@ -237,7 +237,11 @@ def confirm_booking_details(booking_details):
     print("CONFIRMATION")
     print("\n", "-"*10, "\n")
     print("\nPlease read through the details to be considered for the vaccine booking below and confirm before we can "
-          "proceed with automated booking !!.\n")
+          "proceed with automated booking !!. "
+          ""
+          "NOTE:- ENSURE THE \"VACCINE DOSE\" DETAILS MENTIONED HERE MATCHES THE DETAILS IN COWIN !! "
+          "In case of mis-match, consider re-entering the details. Press 'n' to exit and try "
+          "again !! \n")
 
     print("\nList of beneficiaries :- ", "\n")
     display_table(booking_details["beneficiaries"])
@@ -483,7 +487,7 @@ def validate_dose_booking_date(beneficiaries=None, booking_dates=None):
             if invalid_dates:
                 error += "Beneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine on {last_dose_date} " \
                          "and it is mandatory to wait for {days} days before next dosage. The following dates : " \
-                         "'{dates}' are not valid for the given beneficiary. \n Valid dates for the beneficiary is " \
+                         "'{dates}' are not valid for the given beneficiary.Valid dates for the beneficiary is " \
                          "any day from {valid_date} (on or after) \n\n" \
                          "".format(beneficiary=name, last_dose_date=datetime.strftime(last_dose_date, "%d-%m-%Y"),
                                    dose=dose-1,

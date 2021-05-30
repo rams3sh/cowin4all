@@ -19,7 +19,7 @@ if platform != "android":
     logging.getLogger('asyncio').setLevel(logging.WARNING)
     logging.getLogger('urllib3').setLevel(logging.WARNING)
     from cowin4all.otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
-else:
+elif platform != "unknown":
     from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api, listen_on_new_messages
 
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
               vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
-              beneficiary_ids= None, booking_mode=None, otp_retrieval_method=None,
+              beneficiary_ids=None, booking_mode=None, otp_retrieval_method=None,
               captcha_retrieval_method=break_captcha
               ):
 
@@ -211,6 +211,9 @@ def read_booking_info():
 
 def main():
 
+    if platform == "unknown":
+        print("Unable to determine your operating system !! Exiting ..")
+
     parser = argparse.ArgumentParser(description='cowin4all')
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
@@ -259,6 +262,7 @@ def main():
                 listen_on_new_messages(otp_forwarder_mode=True, url=url)
         else:
             print("This mode works only in android !! Current running platform is not android !!")
+
     else:
         confirmation = confirm_and_save_booking_details()
         if confirmation == "details saved":

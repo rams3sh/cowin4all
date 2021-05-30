@@ -38,13 +38,13 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     global event_waiter, time_of_request, otp
     sleep_time = 2
     otp_wait_time = 150
+    last_message_received_time = datetime.now() # Useful only for otp forward mode
+
     while True:
+
         if not otp_forwarder_mode:
             if event_waiter.is_set():
                 break
-        else:
-            time_of_request = datetime.now()
-            otp_wait_time = sleep_time
 
         tmux_sms_list = subprocess.Popen(
             'termux-sms-list -l 10 -t inbox',
@@ -66,15 +66,14 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
             match = re.findall("(?<=CoWIN is )[0-9]{6}", message["body"])
             if match:
                 received_time = datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S")
-                # Maximum limit of message receipt is 180.
-                # Keeping 150 is a safer option.
-                if (received_time - time_of_request).seconds < otp_wait_time:
-                    if not otp_forwarder_mode:
+                if not otp_forwarder_mode:
+                    if (received_time - time_of_request).seconds <= otp_wait_time:
                         otp = match[0]
                         event_waiter.set()
                         break
-                    else:
+                else:
+                    if received_time > last_message_received_time:
+                        logger.info("Received OT Message: {message}".format(message=message))
                         requests.put(url=url, json=message)
-                        return message
 
         time.sleep(sleep_time)

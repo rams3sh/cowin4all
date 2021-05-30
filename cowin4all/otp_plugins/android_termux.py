@@ -94,8 +94,12 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
                             # Consider the message as sent if found stale
                             logger.info("Message: {} has gone stale and no more valid !! Ignoring the message "
                                         "going forward !!".format(message))
-                            last_received_message = message
-                            last_message_received_time = message_received_time
+                            # Since this goes in a for loop , there may be multiple messages which may have been
+                            # going stale. Hence this check is required to set the latest stale message
+                            # as last received.
+                            if message_received_time > last_message_received_time:
+                                last_received_message = message
+                                last_message_received_time = message_received_time
 
         time.sleep(sleep_time)
 

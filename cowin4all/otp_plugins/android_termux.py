@@ -66,7 +66,7 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
             match = re.findall("(?<=CoWIN is )[0-9]{6}", message["body"])
             if match:
                 if message != last_received_message:
-                    if start_time < datetime.strptime(message["received"], "%d-%m-%Y"):
+                    if start_time < datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S"):
                         last_received_message = message
                         if not otp_forwarder_mode:
                             otp = match[0]

@@ -14,6 +14,7 @@ OTP_REQUEST_TIMEOUT_SECONDS = 110
 # BOOKING_ALERT_AUDIO_PATH = os.path.join("audio", "booking_siren_alert.mp3")
 # OTP_ALERT_AUDIO_PATH = os.path.join("audio", "refresh_otp.mp3")
 
+VACCINATION_DOSE_DATES = {"covishield": {"dose2": 84}, "covaxin": {"dose2": 28}, "sputnik v": {"dose2": 21}}
 
 BOOKING_MODES = [{"mode": "all", "remarks": "Book only if slots are available for all selected beneficiaries"},
                  {"mode": "first_available",

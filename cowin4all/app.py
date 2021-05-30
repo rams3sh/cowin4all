@@ -5,7 +5,6 @@ import random
 import json
 import argparse
 import os
-import sys
 
 from cowin4all.cowin4all_sdk.api import APIClient
 from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
@@ -169,10 +168,12 @@ def confirm_and_save_booking_details():
 
     booking_details = get_booking_details(booking_details=booking_details)
 
-    with open(BOOKING_INFORMATION_FILE, 'w') as f:
-        f.write(json.dumps(booking_details))
-
-    return
+    if booking_details:
+        with open(BOOKING_INFORMATION_FILE, 'w') as f:
+            f.write(json.dumps(booking_details))
+        return "details saved"
+    else:
+        return
 
 
 def read_booking_info():
@@ -248,11 +249,12 @@ def main():
                     time.sleep(20)
 
     else:
-        confirm_and_save_booking_details()
-        booking_info = read_booking_info()
-        if platform != "android":
-            api_service = get_webhook_service_worker()
-            with api_service():
-                auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
-        else:
-            auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)
+        confirmation = confirm_and_save_booking_details()
+        if confirmation == "details saved":
+            booking_info = read_booking_info()
+            if platform != "android":
+                api_service = get_webhook_service_worker()
+                with api_service():
+                    auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
+            else:
+                auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)

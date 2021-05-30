@@ -36,10 +36,15 @@ def get_otp_from_termux_api(client=None):
 
 def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     global event_waiter, time_of_request, otp
-
+    sleep_time = 2
+    otp_wait_time = 150
     while True:
-        if event_waiter.is_set():
-            break
+        if not otp_forwarder_mode:
+            if event_waiter.is_set():
+                break
+        else:
+            time_of_request = datetime.now()
+            otp_wait_time = sleep_time
 
         tmux_sms_list = subprocess.Popen(
             'termux-sms-list -l 10 -t inbox',
@@ -63,7 +68,7 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
                 received_time = datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S")
                 # Maximum limit of message receipt is 180.
                 # Keeping 150 is a safer option.
-                if (received_time - time_of_request).seconds < 150:
+                if (received_time - time_of_request).seconds < otp_wait_time:
                     if not otp_forwarder_mode:
                         otp = match[0]
                         event_waiter.set()
@@ -72,4 +77,4 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
                         requests.put(url=url, json=message)
                         return message
 
-        time.sleep(2)
+        time.sleep(sleep_time)

@@ -216,8 +216,6 @@ def main():
 
     args = parser.parse_args()
 
-    print(args)
-
     if args.enter_details:
         confirm_and_save_booking_details()
 
@@ -255,9 +253,7 @@ def main():
         if platform == "android":
             url = get_webhook_url()
             if url:
-                while True:
-                    listen_on_new_messages(otp_forwarder_mode=True, url=url)
-                    time.sleep(2)
+                listen_on_new_messages(otp_forwarder_mode=True, url=url)
         else:
             print("This mode works only in android !! Current running platform is not android !!")
     else:

@@ -37,9 +37,7 @@ def get_otp_from_termux_api(client=None):
 def listen_on_new_messages(otp_forwarder_mode=False, url=None):
     global event_waiter, time_of_request, otp
     sleep_time = 2
-    otp_wait_time = 150
-    last_message_received_time = datetime.now() # Useful only for otp forward mode
-
+    last_received_message = None
     try:
         while True:
             if not otp_forwarder_mode:
@@ -65,17 +63,17 @@ def listen_on_new_messages(otp_forwarder_mode=False, url=None):
             for message in messages:
                 match = re.findall("(?<=CoWIN is )[0-9]{6}", message["body"])
                 if match:
-                    received_time = datetime.strptime(message["received"], "%Y-%m-%d %H:%M:%S")
-                    if not otp_forwarder_mode:
-                        if (received_time - time_of_request).seconds <= otp_wait_time:
+                    if message != last_received_message:
+                        last_received_message = message
+                        if not otp_forwarder_mode:
                             otp = match[0]
                             event_waiter.set()
                             break
-                    else:
-                        if received_time > last_message_received_time:
-                            logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
-                                        "".format(message=message))
-                            requests.put(url=url, json=message)
+                        else:
+                            if message != last_received_message:
+                                logger.info("Received OTP Message: {message}. Sending to the webhook service !!"
+                                            "".format(message=message))
+                                requests.put(url=url, json=message)
 
             time.sleep(sleep_time)
     except Exception:

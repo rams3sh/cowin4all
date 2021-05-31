@@ -6,10 +6,12 @@ from jsonschema.exceptions import ValidationError
 import re
 import tabulate
 import jsonschema
+import sys
+import subprocess
 
-from settings import BOOKING_MODES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
-from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
+from cowin4all.settings import BOOKING_MODES, VACCINATION_DOSE_DATES  # , AUDIO_FILE_PLAYING_COMMAND, BOOKING_ALERT_AUDIO_PATH,
+from cowin4all.cowin4all_sdk.api import APIClient
+from cowin4all.cowin4all_sdk.constants import vaccine_types, minimum_age_limits, payment_types, doses
 
 
 # def play_sound(file_path):
@@ -177,7 +179,7 @@ def generate_date(days_range=None):
     return dates
 
 
-def select_dates():
+def select_dates(beneficiaries=None):
     dates = generate_date(days_range=4)
     display_table(dates, default_attribute_name="Date (dd-mm-yyyy)")
     s_nos = input("Enter S.No(s) of the date(s) to be considered as option for booking (in case of multiple "
@@ -186,9 +188,17 @@ def select_dates():
         s_nos = set([int(s.strip()) for s in s_nos.split(",")])
         validate_serial_no(s_nos)
         selected_dates = [dates[s - 1] for s in s_nos]
+        validate_dose_booking_date(beneficiaries=beneficiaries, booking_dates=selected_dates)
     except (IndexError, ValueError):
         print("Invalid S.No(s) provided. Kindly re-enter the values !!")
-        selected_dates = select_dates()
+        selected_dates = select_dates(beneficiaries=beneficiaries)
+    except Exception as e:
+        print(e)
+        response = select_yes_or_no(message="Do you want to re-consider the dates ?")
+        if response == "n":
+            return
+        else:
+            return select_dates(beneficiaries=beneficiaries)
 
     return selected_dates
 
@@ -227,7 +237,11 @@ def confirm_booking_details(booking_details):
     print("CONFIRMATION")
     print("\n", "-"*10, "\n")
     print("\nPlease read through the details to be considered for the vaccine booking below and confirm before we can "
-          "proceed with automated booking !!.\n")
+          "proceed with automated booking !!. "
+          ""
+          "NOTE:- ENSURE THE \"VACCINE DOSE\" DETAILS MENTIONED HERE MATCHES THE DETAILS IN COWIN !! "
+          "In case of mis-match, consider re-entering the details. Press 'n' to exit and try "
+          "again !! \n")
 
     print("\nList of beneficiaries :- ", "\n")
     display_table(booking_details["beneficiaries"])
@@ -375,6 +389,16 @@ def validate_booking_details(booking_details=None):
                         "type": "integer",
                         "enum": doses
                     },
+                    "last_dose_date": {
+                        "oneOf": [
+                            {
+                                "type": ["string"],
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "vaccine": {
                         "oneOf": [
                                 {
@@ -391,6 +415,7 @@ def validate_booking_details(booking_details=None):
                     "age",
                     "awaited_dose",
                     "booking_age_limit",
+                    "last_dose_date",
                     "id",
                     "name",
                     "vaccine"
@@ -439,6 +464,39 @@ def validate_booking_details(booking_details=None):
     }
 
     jsonschema.validate(schema=schema, instance=booking_details)
+    validate_dose_booking_date(beneficiaries=booking_details["beneficiaries"],
+                               booking_dates=booking_details["dates"])
+
+
+def validate_dose_booking_date(beneficiaries=None, booking_dates=None):
+    error = ""
+    for beneficiary in beneficiaries:
+        if beneficiary["awaited_dose"] > 1:
+            invalid_dates = []
+            dose = beneficiary["awaited_dose"]
+            vaccine = beneficiary["vaccine"]
+            last_dose_date = datetime.strptime(beneficiary["last_dose_date"], "%d-%m-%Y")
+            dose_gap = VACCINATION_DOSE_DATES[vaccine]["dose{}".format(dose)]
+            name = beneficiary.get("name")
+            for date in booking_dates:
+                date = datetime.strptime(date, "%d-%m-%Y")
+                if (date - last_dose_date).days < dose_gap:
+                    invalid_dates.append(datetime.strftime(date, "%d-%m-%Y"))
+
+            valid_date = datetime.strftime((last_dose_date + timedelta(days=dose_gap)), "%d-%m-%Y")
+            if invalid_dates:
+                error += "\nBeneficiary '{beneficiary}' has taken dose {dose} of {vaccine} vaccine " \
+                         "on {last_dose_date} and it is mandatory to wait for {days} days before next dosage. " \
+                         "The following dates : '{dates}' are not valid for the given beneficiary.Valid dates for " \
+                         "the beneficiary is any day from {valid_date} (on or after) \n\n" \
+                         "".format(beneficiary=name, last_dose_date=datetime.strftime(last_dose_date, "%d-%m-%Y"),
+                                   dose=dose-1,
+                                   vaccine=vaccine, days=dose_gap, dates="', '".join(invalid_dates),
+                                   valid_date=valid_date)
+
+    if error:
+        error += "Please change the booking dates and try again!! "
+        raise Exception(error)
 
 
 def get_booking_details(client=None, booking_details=None):
@@ -482,15 +540,18 @@ def get_booking_details(client=None, booking_details=None):
                       "".format(b["name"]))
                 continue
 
+            last_dose_date = None
             if b["dose1_date"] and b["dose2_date"]:
                 vaccine = b["vaccine"].lower().strip()
                 dose = "completed"
+                last_dose_date = b["dose2_date"]
             elif not b["dose1_date"]:
                 vaccine = None
                 dose = 1
             else:
                 vaccine = b["vaccine"].lower().strip()
                 dose = 2
+                last_dose_date = b["dose1_date"]
 
             if dose != "completed":
                 beneficiaries.append({"id": b["beneficiary_reference_id"],
@@ -498,6 +559,7 @@ def get_booking_details(client=None, booking_details=None):
                                       "age": age,
                                       "booking_age_limit": booking_age_limit,
                                       "awaited_dose": dose,
+                                      "last_dose_date": last_dose_date,
                                       "vaccine": vaccine})
 
         if not beneficiaries:
@@ -525,7 +587,13 @@ def get_booking_details(client=None, booking_details=None):
         districts = select_district(client=client, state_ids=state_ids)
         booking_details["district_ids"] = districts
         booking_details["pin_codes"] = select_pin_code()
-        dates = select_dates()
+
+        dates = select_dates(beneficiaries=booking_details["beneficiaries"])
+
+        if not dates:
+            print("Sure !! Exiting !! ")
+            return {}
+
         booking_details["dates"] = dates
 
         booking_mode = select_booking_mode()
@@ -551,3 +619,48 @@ def get_booking_details(client=None, booking_details=None):
             booking_details = get_booking_details(client=client)
 
     return booking_details
+
+
+def get_webhook_url():
+    url = input("Enter url to forward the SMS: ")
+    try:
+        # Basic regex to match url
+        if not re.fullmatch("^http(|s):\\/\\/[^ \n \r]+$", url):
+            raise ValueError()
+    except Exception as e:
+        print("Invalid url provided !!")
+        response = select_yes_or_no(message="Do you want to re-enter the url ?")
+        if response == "n":
+            print("Sure !! Exiting !! ")
+            return
+        else:
+            url = get_webhook_url()
+            if not url:
+                return
+    if not url.endswith("/put_otp"):
+        url = url.rstrip("/").strip()
+        url += "/put_otp"
+    return url
+
+
+def get_platform():
+    platform = sys.platform
+    if platform in ('win32', 'cygwin'):
+        return 'windows'
+    elif platform == 'darwin':
+        return 'macosx'
+    elif platform.startswith('linux'):
+        try:
+            path = str(subprocess.check_output('which python3', shell=True))
+        except subprocess.CalledProcessError as e:
+            # Normally encountered in centOs based system where `which` would not be present
+            path = ""
+        if "com.termux" in path:
+            return "android"
+        else:
+            return "linux"
+    elif platform.startswith('freebsd'):
+        return 'linux'
+    return 'unknown'
+
+

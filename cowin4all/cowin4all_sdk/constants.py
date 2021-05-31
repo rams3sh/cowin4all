@@ -1,6 +1,3 @@
-import os.path
-import json
-
 base_url = "https://cdn-api.co-vin.in/api/v2/"
 
 endpoint_map = {
@@ -42,7 +39,3 @@ vaccine_types = ["covaxin", "covishield", "sputnik v"]
 minimum_age_limits = [18, 45]
 doses = [1, 2]
 payment_types = ["paid", "free"]
-
-captcha_char_mapping = {}
-with open(os.path.join(os.path.dirname(__file__), "captcha_char_mapping.json"), "r") as f:
-    captcha_char_mapping = json.loads(f.read())

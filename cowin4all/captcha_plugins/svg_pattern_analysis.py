@@ -1,4 +1,6 @@
-{
+import re
+
+captcha_char_mapping = {
   "MLLQLLQLLQLLLQLLQLLQZMLLQLLQLLQLLQLLQLLQLLQZMLLQLLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQZMLLQLLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQZMLLQLLLQLLQZMLLQLLQLLQLLQZ": "0",
   "MLLQLLQLLQLLQLLQLLQLLQLLQZMLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLZ": "1",
   "MLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLLQLLQLLQLLQLLQLLQLLQZMLLQLLLQLLQLLQLLQLLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLLQLLQLLQLLQLLQLLLQLLLQLLQZ": "2",
@@ -61,3 +63,19 @@
   "MLLQLLQLLQLLQLLQLLQLLQLLLQLLQZMLLQLLLQLLQLLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLLQLLQZ": "y",
   "MLLQLLQLLQLLQLLQLLQLLQLLLQLLQLLQLLQLLQLLQZMLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLQLLLQLLLQLLQLLQLLQLLQLLQLLQLLQLLQZ": "z"
 }
+
+
+def break_captcha(captcha_svg=None):
+    model = captcha_char_mapping
+    svg_data = captcha_svg
+    paths = [re.findall("(?<=d\\=\").*(?=\")", p)[0] for p in re.findall("<path [^>]+(?=/\\>)", svg_data)]
+    captcha_map = {}
+    for path in paths:
+        index = re.findall("(?<=^M)[0-9]+", path)[0]
+        encoded_string = "".join(re.findall("[A-Z]", path))
+        captcha_map[int(index)] = model.get(encoded_string)
+
+    captcha_map = sorted(captcha_map.items())
+
+    value = "".join("".join([c[1] for c in captcha_map]))
+    return value

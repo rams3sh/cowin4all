@@ -3,18 +3,25 @@ import time
 import logging
 import random
 import json
+import argparse
 import os
-import sys
 
-from cowin4all_sdk.api import APIClient
-from cowin4all_sdk.utils import get_applicable_sessions, refresh_token, break_captcha
-from webhook_service import get_webhook_service_worker, get_otp_from_webhook
-from settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
+from cowin4all.cowin4all_sdk.api import APIClient
+from cowin4all.cowin4all_sdk.utils import get_applicable_sessions, refresh_token
+from cowin4all.settings import POLL_TIME_RANGE, LOG_FORMAT, AUTO_TOKEN_REFRESH_ATTEMPTS,  BOOKING_INFORMATION_FILE, \
     REPEATEDLY_TRY_WITHOUT_SLEEP_ERROR_REGEX
-from utils import get_booking_details, get_timestamp  # , booking_alert
+from cowin4all.utils import get_booking_details, get_timestamp, get_platform, get_webhook_url  # , booking_alert
+from cowin4all.captcha_plugins.svg_pattern_analysis import break_captcha
 
-logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.WARNING)
+platform = get_platform()
+
+if platform != "android":
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    from cowin4all.otp_plugins.webhook_service import get_webhook_service_worker, get_otp_from_webhook
+elif platform != "unknown":
+    from cowin4all.otp_plugins.android_termux import get_otp_from_termux_api, listen_on_new_messages
+
 
 logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +30,8 @@ logger = logging.getLogger(__name__)
 def auto_book(mobile_number=None,
               pin_codes=None, district_ids=None,
               vaccine_type=None, payment_type=None, dose=None, age_limit=None, dates=None,
-              beneficiary_ids= None, booking_mode=None, otp_retrieval_method=None,
+              beneficiary_ids=None, booking_mode=None, otp_retrieval_method=None,
+              captcha_retrieval_method=break_captcha
               ):
 
     client = APIClient(mobile_no=mobile_number, otp_retrieval_method=otp_retrieval_method, auto_refresh_token=True,
@@ -38,7 +46,8 @@ def auto_book(mobile_number=None,
         # booking_alert()
         slot = slots[-1]
         c = client.get_captcha()
-        captcha = break_captcha(captcha_svg=c)
+        captcha = captcha_retrieval_method(captcha_svg=c)
+
         try:
             app_id = client.schedule_booking(beneficiaries=beneficiaries,
                                              session_id=session_id,
@@ -162,10 +171,12 @@ def confirm_and_save_booking_details():
 
     booking_details = get_booking_details(booking_details=booking_details)
 
-    with open(BOOKING_INFORMATION_FILE, 'w') as f:
-        f.write(json.dumps(booking_details))
-
-    return
+    if booking_details:
+        with open(BOOKING_INFORMATION_FILE, 'w') as f:
+            f.write(json.dumps(booking_details))
+        return "details saved"
+    else:
+        return
 
 
 def read_booking_info():
@@ -192,32 +203,74 @@ def read_booking_info():
                   "".format(BOOKING_INFORMATION_FILE))
             os.remove(BOOKING_INFORMATION_FILE)
     else:
-        print("There is no booking information available !!")
+        print("There is no booking information available !! Kindly enter the booking details and try again !!")
+        return
 
     return booking_info
 
 
-if __name__ == "__main__":
+def main():
 
-    if len(sys.argv) < 2:
+    if platform == "unknown":
+        print("Unable to determine your operating system !! Exiting ..")
+
+    parser = argparse.ArgumentParser(description='cowin4all')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
+    modes.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
+    modes.add_argument("-o", "--otp-forward", help="run as OTP forwarder for android", action='store_true')
+    modes.add_argument("-n", "--notify-slot", help="run as notifier of slots (yet to be implemented)", action='store_true')
+
+    args = parser.parse_args()
+
+    if args.enter_details:
         confirm_and_save_booking_details()
-        booking_info = read_booking_info()
-        api_service = get_webhook_service_worker()
-        with api_service():
-            auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
 
-    elif sys.argv[1] == "test":
-        print("Testing SMSSync integration :")
-        mob = read_booking_info()["mobile_number"]
-        service = get_webhook_service_worker()
-        with service():
-            client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook, auto_refresh_token=False)
-            while True:
-                try:
-                    refresh_token(client=client)
-                    print("\n\nIntegration working fine !! Exiting ..")
-                    break
-                except Exception as e:
-                    print(e)
+    elif args.test_otp:
+        binfo = read_booking_info()
+        if binfo:
+            mob = binfo["mobile_number"]
+            if platform != "android":
+                print("Testing SMS-Webhook integration :")
+                service = get_webhook_service_worker()
+                with service():
+                    client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_webhook,
+                                       auto_refresh_token=False)
+                    while True:
+                        try:
+                            refresh_token(client=client)
+                            print("\n\nIntegration working fine !! Exiting ..")
+                            break
+                        except Exception as e:
+                            print(e)
 
-                time.sleep(20)
+                        time.sleep(20)
+            else:
+                client = APIClient(mobile_no=mob, otp_retrieval_method=get_otp_from_termux_api,
+                                   auto_refresh_token=False)
+                while True:
+                    try:
+                        refresh_token(client=client)
+                        print("\n\nIntegration working fine !! Exiting ..")
+                        break
+                    except Exception as e:
+                        print(e)
+                    time.sleep(20)
+    elif args.otp_forward:
+        if platform == "android":
+            url = get_webhook_url()
+            if url:
+                listen_on_new_messages(otp_forwarder_mode=True, url=url)
+        else:
+            print("This mode works only in android !! Current running platform is not android !!")
+
+    else:
+        confirmation = confirm_and_save_booking_details()
+        if confirmation == "details saved":
+            booking_info = read_booking_info()
+            if platform != "android":
+                api_service = get_webhook_service_worker()
+                with api_service():
+                    auto_book(**booking_info, otp_retrieval_method=get_otp_from_webhook)
+            else:
+                auto_book(**booking_info, otp_retrieval_method=get_otp_from_termux_api)

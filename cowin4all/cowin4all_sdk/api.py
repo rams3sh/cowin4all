@@ -1,8 +1,8 @@
 from hashlib import sha256
 import re
 
-from cowin4all_sdk.utils import send_request
-from cowin4all_sdk.constants import default_otp_generation_secret, default_refresh_token_retries_attempts, \
+from cowin4all.cowin4all_sdk.utils import send_request
+from cowin4all.cowin4all_sdk.constants import default_otp_generation_secret, default_refresh_token_retries_attempts, \
     default_auto_refresh_token, default_retry_blocked_request
 
 

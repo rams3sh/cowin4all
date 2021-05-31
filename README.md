@@ -439,7 +439,7 @@ Execute the below command in your respective OS's terminal.
 cowin4all -t 
 ```
 
-If OTP forwarder in case of non all-in-one setup / installation of required termux libraries in case all-in-one setup has been carried out properly, one would get SMS Integration. Below is a sample screenshot from Android termux.
+If OTP forwarder in case of non all-in-one setup / installation of required termux libraries in case all-in-one setup has been carried out properly, one would get "Integration working fine" message just as in the case of below sample screenshot from Android termux. The screen in your Linux / Mac / Windows may not look exact , but the message would be same.
 
 ![cowin4all_android_termux_test_otp](media/cowin4all_test_mode.jpg)
 

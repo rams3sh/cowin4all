@@ -104,18 +104,18 @@ Before you proceed to `Installation`, be clear on the type of setup you would wa
 
 **Deciding which setup to go with ?**
 
-* If you are helping a person who is remote, you should go with Type 1 Option a. This would require you to setup a cowin4all app server in your system (windows / linux / mac OS). You have to expose your cowin4all app server over ngrok to internet. And last, you need to install an OTP forwarder in the concerned person's mobile for whom you are booking the slot to send the OTP to your cowin4all app server. So this involves three steps. They are :-
+* If you are helping a person who is remote, you should go with **Type 1 Option a**. This would require you to setup a cowin4all app server in your system (windows / linux / mac OS). You have to expose your cowin4all app server over ngrok to internet. And last, you need to install an OTP forwarder in the concerned person's mobile for whom you are booking the slot to send the OTP to your cowin4all app server. So this involves three steps. They are :-
   * Setup cowin4all app server in your Linux / Windows / Mac OS.
   * Setup the ngrok service in your system for exposing the app server to the internet
   * Setup an OTP forwarder app in the concerned person's mobile for whom booking is being done with ngrok url of the cowin4all app server so that OTP can be forwarded in the timely manner.
 
 
-* If you are booking for a person who is within the same wifi network as yours, you can follow the same as above but can feel free to skip the step of setting up ngrok, since the person's mobile can directly forward the OTP to the cowin4all app server over your local network. So two steps in total. They are :-
+* If you are booking for a person who is within the same wifi network as yours, you can go with **Type 1 Option b**. So two steps in total. They are :-
   * Setup cowin4all app server in your Linux / Windows / Mac OS.
   * Setup an OTP forwarder app in the concerned person's mobile for whom booking is being done with url of the local cowin4all app server so that OTP can be forwarded in the timely manner.
   
 
-* In case you would want to just get everything done with your android mobile , you may choose to go with cowin4all(all-in-one) setup. That would require only one step i.e. :-
+* In case you would want to just get everything done with your android mobile , you may choose to go with cowin4all(all-in-one) i.e. **Type 2** setup. That would require only one step i.e. :-
   * Setup cowin4all in your android.  
 
 ---

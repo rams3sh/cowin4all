@@ -453,11 +453,11 @@ Following are some signatures of the automated tools  , I have encountered so fa
       * https://github.com/suraj-deshmukh/CoWin-Vaccine-Slot-Monitoring-and-Auto-Booking/blob/939dda05621f758b46eb7f62c1996c9a38a53f37/utils.py#L13
 
 
-2. Its better not to provide captcha in an SVG format or any format that can be directly analysed based on just identifying the patterns of the paths for rendering the captcha.  More on how CoWIN's captcha was solved could be inferred from the issue [here] (https://github.com/skotz/cbl-js/issues/65). One can refer the logic of analysing the captcha format and determining the captcha text from the file at  `cowin4all/captcha_plugins/svg_pattern_analysis.py`. 
+2. Its better not to provide captcha in an SVG format or any format that can be directly analysed based on just identifying the patterns of the paths for rendering the captcha.  More on how CoWIN's captcha was solved could be inferred from the issue [here](https://github.com/skotz/cbl-js/issues/65) . One can refer the logic of analysing the captcha format and determining the captcha text from the file at  `cowin4all/captcha_plugins/svg_pattern_analysis.py`. 
    
    This defies the basic purpose of having captcha in the first place which is to differentiate humans from bots. Stronger and novel the captcha , better the prevention of bots. One can use somthing like Google's reCaptcha to have a better chance at stopping bots. This would not totally solve the problem, because there are ways to crack it, but at the least it will cut down good dozen of bots from hitting the site. 
    
-Practically , implementing some of the recommendations mentioend above would bring down usability. But at the end of the day it's always a tradeoff between security and usability. Finding the right balance is always the biggest challenge.
+Practically , implementing some of the recommendations mentioned above would bring down usability. But at the end of the day it's always a tradeoff between security and usability. Finding the right balance is always the biggest challenge.
 
 All the above being said, CoWIN site being one of the major choke point of vaccine supply in a country like ours where majority of the people are yet to be exposed to technology is something I dont feel justified. There are good number of people who do not even know what CoWIN is. 
 

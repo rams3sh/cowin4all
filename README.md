@@ -80,15 +80,17 @@ Apart from the webhook service, it also runs a separate thread which interacts w
 
 Following are the two types of setup possible :-
 ~~~
- Option a : OTP forward over local network (i.e. within your home basic wifi network)
- 
- In this cases webhook service is exposed to internal network alone.
 
- Option b : OTP forward over internet 
+ Option a : OTP forward over internet 
 
  In this case, webhook service is exposed over internet through a secure tunnel provided by ngrok.
 
  This is helpful if you are trying to book for people who may be in remote places with internet availability and may not be very aware of technology and booking of vaccines. I was able to help couple of old people in my native who were not well versed with technology, with this setup.  
+
+Option b : OTP forward over local network (i.e. within your home basic wifi network)
+ 
+ In this cases webhook service is exposed to internal network alone.
+
 
 ~~~
 

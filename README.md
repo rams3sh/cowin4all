@@ -88,7 +88,7 @@ Following are the two types of setup possible :-
 
  In this case, webhook service is exposed over internet through a secure tunnel provided by ngrok.
 
- This is helpful if you are trying to book for people who may be in remote places with internet availability and may not be very aware of technology and booking of vaccines. I was able to help couple of people in my native who were not well versed with technology with this setup. 
+ This is helpful if you are trying to book for people who may be in remote places with internet availability and may not be very aware of technology and booking of vaccines. I was able to help couple of old people in my native who were not well versed with technology, with this setup.  
 
 ~~~
 
@@ -101,6 +101,22 @@ In this setup, cowin4all app houses both OTP listener for listening to incoming 
 
 
 Before you proceed to `Installation`, be clear on the type of setup you would want to establish else the below instruction would be overwhelming when looked as whole. Feel free to skip areas which does not matter for your setup. 
+
+**Deciding which setup to go with ?**
+
+* If you are helping a person who is remote, you should go with Type 1 Option a. This would require you to setup a cowin4all app server in your system (windows / linux / mac OS). You have to expose your cowin4all app server over ngrok to internet. And last, you need to install an OTP forwarder in the concerned person's mobile for whom you are booking the slot to send the OTP to your cowin4all app server. So this involves three steps. They are :-
+  * Setup cowin4all app server in your Linux / Windows / Mac OS.
+  * Setup the ngrok service in your system for exposing the app server to the internet
+  * Setup an OTP forwarder app in the concerned person's mobile for whom booking is being done with ngrok url of the cowin4all app server so that OTP can be forwarded in the timely manner.
+
+
+* If you are booking for a person who is within the same wifi network as yours, you can follow the same as above but can feel free to skip the step of setting up ngrok, since the person's mobile can directly forward the OTP to the cowin4all app server over your local network. So two steps in total. They are :-
+  * Setup cowin4all app server in your Linux / Windows / Mac OS.
+  * Setup an OTP forwarder app in the concerned person's mobile for whom booking is being done with url of the local cowin4all app server so that OTP can be forwarded in the timely manner.
+  
+
+* In case you would want to just get everything done with your android mobile , you may choose to go with cowin4all(all-in-one) setup. That would require only one step i.e. :-
+  * Setup cowin4all in your android.  
 
 ---
 ## 3. Installation
@@ -279,6 +295,12 @@ Refer the `cowin4all/app.py` for usage reference.
 
 The code base is written as modular as possible so as to support multiple types of otp retrieval and captcha solving mechanism. One may refer the `otp_plugins` and `captcha_plugins` folder to understand how a custom retrieval plugin can be written.
 
+Some ideas I have thought about but never implemented are following which user can probably try out.
+
+* Telegram bot which can take captcha input from user during the course of run. 
+* Implement kvdb as OTP store and write a OTP retrieval plugin just as how [bombardier-gif](https://github.com/bombardier-gif/covid-vaccine-booking) has implemented it.
+*  
+
 ### 4.2. As app 
 
 
@@ -456,7 +478,10 @@ Following are some signatures of the automated tools  , I have encountered so fa
 2. Its better not to provide captcha in an SVG format or any format that can be directly analysed based on just identifying the patterns of the paths for rendering the captcha.  More on how CoWIN's captcha was solved could be inferred from the issue [here](https://github.com/skotz/cbl-js/issues/65) . One can refer the logic of analysing the captcha format and determining the captcha text from the file at  `cowin4all/captcha_plugins/svg_pattern_analysis.py`. 
    
    This defies the basic purpose of having captcha in the first place which is to differentiate humans from bots. Stronger and novel the captcha , better the prevention of bots. One can use somthing like Google's reCaptcha to have a better chance at stopping bots. This would not totally solve the problem, because there are ways to crack it, but at the least it will cut down good dozen of bots from hitting the site. 
-   
+
+3. Based on observation of response pertaining to request blocked , there is a high chance that CoWIN may be completely run from AWS since the requests had cloudfront signature in it. There are services in AWS which can also help in preventing bots to some extent such as [this](https://aws.amazon.com/waf/features/bot-control/). Though I cannot personally vouch for effectiveness of it, but atleast it claims to prevent bots in the article.  
+
+
 Practically , implementing some of the recommendations mentioned above would bring down usability. But at the end of the day it's always a tradeoff between security and usability. Finding the right balance is always the biggest challenge.
 
 All the above being said, CoWIN site being one of the major choke point of vaccine supply in a country like ours where majority of the people are yet to be exposed to technology is something I dont feel justified. There are good number of people who do not even know what CoWIN is. 

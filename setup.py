@@ -30,6 +30,7 @@ with open('requirements.txt') as f:
     required = [p.strip() for p in f.read().splitlines() if not p.startswith("#")]
 
 if operating_system == "android":
+    # Android will not be used as webhook service, hence these may not be required.
     not_required = ["uvicorn", "fastapi"]
     temp = []
     for r in required:
@@ -39,7 +40,7 @@ if operating_system == "android":
             temp.append(r)
     required = temp
 
-version = "0.0"
+version = "0.1"
 
 
 setuptools.setup(

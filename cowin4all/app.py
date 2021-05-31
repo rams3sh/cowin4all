@@ -219,6 +219,7 @@ def main():
     modes.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
     modes.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
     modes.add_argument("-o", "--otp-forward", help="run as OTP forwarder for android", action='store_true')
+    modes.add_argument("-n", "--notify-slot", help="run as notifier of slots (yet to be implemented)", action='store_true')
 
     args = parser.parse_args()
 

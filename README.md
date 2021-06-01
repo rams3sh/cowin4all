@@ -251,11 +251,14 @@ to read OTP from phone directly.
   apt install termux-api
   termux-sms-list # Provide permission to read SMS when asked in permission pop-up
   termux-wake-lock # To keep the termux running in the background
+ 
   ``` 
 
 *Note:*
 ~~~
 Refer https://wiki.termux.com/wiki for additional details on termux and termux-api. 
+Dont forget to unlock the wake after use, using the below command :-
+termux-wake-unlock 
 ~~~
 
 **iii.** Installing other pre-requisites for cowin4all

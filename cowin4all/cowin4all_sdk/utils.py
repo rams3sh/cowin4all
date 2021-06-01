@@ -22,6 +22,16 @@ from cowin4all.cowin4all_sdk.constants import endpoint_map, default_request_retr
 logger = logging.getLogger(__name__)
 
 
+class TimeOutSupportedHTTPAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, timeout=None, *args, **kwargs):
+        self.timeout = timeout
+        super(TimeOutSupportedHTTPAdapter, self).__init__(*args, **kwargs)
+
+    def send(self, *args, **kwargs):
+        kwargs['timeout'] = self.timeout
+        return super(TimeOutSupportedHTTPAdapter, self).send(*args, **kwargs)
+
+
 def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(500, 502, 504), timeout=None):
     session = requests.Session()
     retry = Retry(
@@ -31,12 +41,9 @@ def requests_retry_session(retries=None, backoff_factor=None, status_forcelist=(
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist
     )
-    adapter = HTTPAdapter(max_retries=retry)
+    adapter = TimeOutSupportedHTTPAdapter(max_retries=retry, timeout=timeout)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
-
-    for method in ('get', 'options', 'head', 'post', 'put', 'patch', 'delete'):
-        setattr(session, method, functools.partial(getattr(session, method), timeout=timeout))
 
     return session
 
@@ -94,10 +101,12 @@ def send_request(action=None, payload=None,
 
         logger.debug("Request Body :-\nMethod : {} , \nURL : {}, \nHeaders : {} , \nPayload : {}\n".format(
             request.method, request.url, request.headers, request.body))
+
         session = requests_retry_session(retries=connection_error_retries,
                                          backoff_factor=backoff_factor,
                                          timeout=timeout
                                          )
+
         response = session.send(request, allow_redirects=False)
         logger.debug("Response Body :-\nStatus Code : {} , \nHeaders : {} , \nBody : {}\n".format(
             response.status_code, response.headers, response.content))
@@ -149,20 +158,20 @@ def get_applicable_sessions(client=None, pin_codes: list = None,
                             payment_type: list = None, age: int = None, dose: int = None):
 
     if not payment_type:
-        return {}
-    elif isinstance(payment_type, list) and set(payment_types).intersection(set(payment_type)):
+        payment_type = payment_types
+    elif set(payment_types).intersection(set(payment_type)):
         pass  # Nothing to do
     else:
-        payment_type = payment_types
+        return {}
 
     if not vaccine_type:
-        return {}
-    elif isinstance(vaccine_type, list) and set(vaccine_types).intersection(set(vaccine_type)):
+        vaccine_type = vaccine_types
+    elif set(vaccine_types).intersection(set(vaccine_type)):
         pass  # Nothing to do
     else:
-        vaccine_type = vaccine_types
+        return {}
 
-    if age is [None]:
+    if not age:
         age = minimum_age_limits
     elif age not in minimum_age_limits:
         return {}
@@ -178,16 +187,19 @@ def get_applicable_sessions(client=None, pin_codes: list = None,
 
     centres = []
     d = set()
+
     if dates:
         if not isinstance(dates, list):
             d = {dates}
         else:
             d = set(dates)
 
-    if isinstance(days_range, int):
+    elif isinstance(days_range, int):
         for i in range(0, days_range):
             date = datetime.datetime.now() + datetime.timedelta(days=i)
             d.add(datetime.datetime.strftime(date, "%d-%m-%Y"))
+    else:
+        return {}
 
     for i in d:
         if district_ids:

@@ -1,5 +1,7 @@
 # cowin4All 
 
+[![Known Vulnerabilities](https://snyk.io/test/github/rams3sh/cowin4all/badge.svg)](https://snyk.io/test/github/rams3sh/cowin4all)
+
 cowin4all is a framework to automate booking of vaccine slot in CoWin.
 
 cowin4all SDK refers to the code present in `cowin4all/cown4all_sdk` folder. 
@@ -425,7 +427,7 @@ This has not been tested, but it will logically work. One can refer detailed doc
 
 Link [here](https://github.com/bombardier-gif/covid-vaccine-booking#shortcuts-steps-in-screenshots).
 
-Just ensure that the url entered in the configuration is that of the cowin4all server app and the method is `PUT`.
+Just ensure that the url entered in the configuration in Step 8 (mentioned in the above link) is that of the cowin4all server app and the method is `PUT`.
 
 *Note:* 
 ~~~

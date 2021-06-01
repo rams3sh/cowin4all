@@ -217,9 +217,11 @@ def main():
     parser = argparse.ArgumentParser(description='cowin4all')
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("-e", "--enter-details", help="enter details for booking", action='store_true')
+    modes.add_argument("-o", "--otp-forward", help="run as OTP forwarder for android (android only)",
+                       action='store_true')
+    modes.add_argument("-n", "--notify-slot", help="run as notifier of slots (yet to be implemented)",
+                       action='store_true')
     modes.add_argument("-t", "--test-otp", help="test otp retrieval mechanism", action='store_true')
-    modes.add_argument("-o", "--otp-forward", help="run as OTP forwarder for android", action='store_true')
-    modes.add_argument("-n", "--notify-slot", help="run as notifier of slots (yet to be implemented)", action='store_true')
 
     args = parser.parse_args()
 
@@ -263,7 +265,8 @@ def main():
                 listen_on_new_messages(otp_forwarder_mode=True, url=url)
         else:
             print("This mode works only in android !! Current running platform is not android !!")
-
+    elif args.notify_slot:
+        pass
     else:
         confirmation = confirm_and_save_booking_details()
         if confirmation == "details saved":

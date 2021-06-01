@@ -246,7 +246,12 @@ to read OTP from phone directly.
 
 * Open your installed `termux` app . You will be welcomed with a terminal.
    
-* Execute  `apt install termux-api` . 
+* Execute  the following commands :-
+  ```
+  apt install termux-api
+  termux-sms-list # Provide permission to read SMS when asked in permission pop-up
+  termux-wake-lock # To keep the termux running in the background
+  ``` 
 
 *Note:*
 ~~~
@@ -545,4 +550,6 @@ Please feel free to use the code the way you would want to , as long as it benef
 
 This has been released with good intentions of helping all in getting equal chances at booking slots in CoWIn. 
 
-Use it at your own risk. author assumes no responsibility or liability in case of illegitimate use of this code.
+Use it at your own risk. Author assumes no responsibility or liability in case of illegitimate use of this code.
+
+

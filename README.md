@@ -1,5 +1,9 @@
 # cowin4All 
 
+
+
+# [DISCLAIMER: THIS REPOSITORY IS NO LONGER MAINTAINED. USE IT AT YOUR OWN RISK ]
+
 cowin4all is a framework to automate booking of vaccine slot in CoWin.
 
 cowin4all SDK refers to the code present in `cowin4all/cown4all_sdk` folder. 
